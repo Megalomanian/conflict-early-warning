@@ -1,0 +1,29 @@
+{
+  "latex-workshop.latex.recipes": [
+    {
+      "name": "tectonic",
+      "tools": ["tectonic"]
+    }
+  ],
+  "latex-workshop.latex.tools": [
+    {
+      "name": "tectonic",
+      "command": "tectonic",
+      "args": [
+        "-X",
+        "compile",
+        "-k",
+        "--reruns",
+        "3",
+        "%DOC%"
+      ]
+    }
+  ],
+  "latex-workshop.latex.recipe.default": "lastUsed",
+  "latex-workshop.latex.autoBuild.run": "onSave",
+  "[latex]": {
+    "editor.wordWrap": "on",
+    "editor.formatOnSave": false
+  },
+  "latex-workshop.view.pdf.viewer": "tab"
+}

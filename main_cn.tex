@@ -1,0 +1,278 @@
+\documentclass[conference]{IEEEtran}
+
+% 如果需要中文，建议使用 XeLaTeX 编译
+\usepackage[UTF8]{ctex}
+
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{bm}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+
+\begin{document}
+
+\title{社交媒体冲突预警系统}
+
+\author{\IEEEauthorblockN{作者姓名}
+\IEEEauthorblockA{单位名称\\
+邮箱}}
+\maketitle
+
+\section{方法}
+
+\subsection{问题定义}
+
+我们研究按话题组织、并离散为固定长度时间分箱的社交媒体评论流。对于某一给定话题，设观测时间段被划分为 $T$ 个长度相同且连续的时间箱。为简化记号，以下定义中省略话题索引。记
+\[
+\mathcal{B}_t = \{x_{t,i}\}_{i=1}^{n_t}
+\]
+为时间箱 $t \in \{1, \dots, T\}$ 中发布的 $n_t$ 条评论构成的多重集，其中每个 $x_{t,i}$ 表示一条文本消息。
+
+我们的第一个目标是通过文本编码器 $f_\theta$ 为每条评论分配一个可解释的\emph{冲突指数}：
+\begin{equation}
+c_{t,i} = f_\theta(x_{t,i}) \in [0, 1],
+\end{equation}
+其中较高的数值表示更强的对抗性线索（例如高唤醒负面情绪和对峙性标记）。为了获得每个时间箱上的话题级风险信号，我们使用固定聚合算子 $\mathrm{Agg}(\cdot)$ 对评论级指数进行聚合：
+\begin{equation}
+\bar{c}_t = \mathrm{Agg}\left(\{c_{t,i}\}_{i=1}^{n_t}\right) \in [0, 1].
+\end{equation}
+
+我们的第二个目标是进行短时域预测以实现早期预警。给定历史分箱序列 $\bar{c}_{1:t}$，我们学习一个时序预测器 $g_\phi$ 来估计未来长度为 $H$ 的风险轨迹 $\mathbf{\hat{c}}$：
+\begin{equation}
+\mathbf{\hat{c}}_{t+1:t+H} = g_\phi(\bar{c}_{1:t}).
+\end{equation}
+如果在预测时域内，预测风险预计会超过预定义阈值 $\eta$，则在时间箱 $t$ 触发升级预警，即
+\begin{equation}
+\max_{1 \le h \le H} \hat{c}_{t+h} \ge \eta,
+\end{equation}
+并且也可以选择结合快速增长判据，以捕捉迅速上升的趋势。
+
+\subsection{无人工标注的冲突指数刻画}\label{sec:conflict_index}
+
+我们的数据集仅包含带时间戳的评论文本流，不提供任何人工标注标签。因此，我们通过结合三个可解释组成部分来构建一种无监督（弱监督）的\emph{冲突指数}：(i) 对抗/攻击强度，(ii) 负面高唤醒情绪强度，以及 (iii) 由时间箱内部语义双峰性导出的立场极化程度。对于发布在时间箱 $t$ 中的每条评论 $x_{t,i}$，我们计算
+\begin{equation}
+c_{t,i} = \sigma\!\left(w_a \tilde{a}_{t,i} + w_e \tilde{e}_{t,i} + w_s \tilde{s}_{t,i} + b\right)\in[0,1],
+\label{eq:conflict_index_fusion}
+\end{equation}
+其中 $\sigma(\cdot)$ 为 sigmoid 函数，$w_a,w_e,w_s \ge 0$ 控制各组成部分的相对贡献（例如 $w_a:w_e:w_s = 0.5:0.3:0.2$），$b$ 为偏置项。带波浪号的量表示经过\emph{分布校准}后的得分（见 Sec.~\ref{sec:calibration}），从而使不同来源的组成部分具有可比性。
+
+\subsubsection{来自预训练有害内容模型的攻击/对抗强度}
+
+我们使用一个预训练的有害/攻击检测器（例如 toxicity/insult/hate 模型）为给定文本输出攻击性内容概率，从而获得对抗性得分：
+\begin{equation}
+a_{t,i} = h_{\psi}(x_{t,i}) \in [0,1],
+\label{eq:attack_score}
+\end{equation}
+其中 $h_{\psi}$ 是冻结的预训练模型。该得分可视为一种\emph{伪标签先验}，用于捕捉对峙标记、威胁、骚扰以及辱骂性语言，而无需任何任务特定标注。
+
+\subsubsection{来自零样本情绪模型的情绪强度}
+
+我们利用零样本（或预训练）情绪模型输出的情绪类别概率来刻画带有情绪张力的负面性。记 $p_{\text{neg}}(x_{t,i})$ 为负面情绪概率，$p_{\text{anger}}(x_{t,i})$ 为愤怒概率（愤怒是一种高唤醒负面情绪）。定义
+\begin{equation}
+e_{t,i} = \alpha\, p_{\text{neg}}(x_{t,i}) + (1-\alpha)\, p_{\text{anger}}(x_{t,i}), \quad \alpha \in [0,1],
+\label{eq:emotion_score}
+\end{equation}
+其中 $\alpha$ 用于平衡一般负面性和与高唤醒相关的愤怒（实际中我们采用 $\alpha\in[0.6,0.8]$）。这种构造会对既负面又情绪强烈的评论赋予更高分值，而这类评论往往是冲突升级的常见前兆。
+
+\subsubsection{通过时间箱内语义双峰性刻画立场极化}
+
+在缺乏立场标签（支持/反对/中立）的情况下，我们通过测量同一时间箱内评论是否形成两个语义上分离的阵营来估计极化程度。首先，使用冻结编码器 $\mathrm{Enc}(\cdot)$（例如多语言 BERT 池化或 sentence-transformer）计算句向量：
+\begin{equation}
+\mathbf{v}_{t,i} = \mathrm{Enc}(x_{t,i}) \in \mathbb{R}^d.
+\label{eq:embedding}
+\end{equation}
+在时间箱 $t$ 内，我们对 $\{\mathbf{v}_{t,i}\}_{i=1}^{n_t}$ 进行 $k{=}2$ 聚类（例如 k-means），得到两个簇中心 $\mathbf{u}_{t,1}$ 和 $\mathbf{u}_{t,2}$。阵营间分离度定义为
+\begin{equation}
+\Delta_t = 1 - \cos(\mathbf{u}_{t,1}, \mathbf{u}_{t,2}) \in [0,2],
+\label{eq:camp_separation}
+\end{equation}
+其中 $\cos(\cdot,\cdot)$ 为余弦相似度。接下来，我们刻画每条评论相对于两个阵营中某一方的偏向强度。设 $d(\cdot,\cdot)$ 为距离函数（本文采用余弦距离），定义阵营归属置信度
+\begin{equation}
+q_{t,i} = \frac{\left|d(\mathbf{v}_{t,i},\mathbf{u}_{t,1}) - d(\mathbf{v}_{t,i},\mathbf{u}_{t,2})\right|}
+{d(\mathbf{v}_{t,i},\mathbf{u}_{t,1}) + d(\mathbf{v}_{t,i},\mathbf{u}_{t,2}) + \epsilon} \in [0,1],
+\label{eq:alignment_confidence}
+\end{equation}
+其中使用一个很小的 $\epsilon>0$ 以避免除零。最终，某条评论的立场极化得分为
+\begin{equation}
+s_{t,i} = \mathrm{norm}(\Delta_t)\cdot q_{t,i} \in [0,1],
+\label{eq:stance_score}
+\end{equation}
+其中 $\mathrm{norm}(\Delta_t)$ 将分离幅度映射到 $[0,1]$（例如 $\mathrm{norm}(\Delta_t)=\min(1,\Delta_t)$）。这样，当某个时间箱表现出两个明显阵营且某条评论清晰地归属于其中一方时，该评论会获得更高的极化得分。
+
+\subsubsection{基于百分位映射的分布校准}\label{sec:calibration}
+
+不同预训练模型和启发式方法产生的得分，其尺度和分布可能并不一致。因此，我们使用在整个语料库（或较大子集）上计算得到的经验累积分布函数（ECDF），对每个原始组成得分进行校准。对于某个原始得分 $r_{t,i}\in[0,1]$（代表 $a_{t,i}$、$e_{t,i}$ 或 $s_{t,i}$），定义
+\begin{equation}
+\tilde{r}_{t,i} = \mathrm{ECDF}_r(r_{t,i}) \in [0,1],
+\label{eq:ecdf}
+\end{equation}
+即将 $r_{t,i}$ 映射为其百分位排名。该校准方式可以得到可比较的 $\tilde{a}_{t,i},\tilde{e}_{t,i},\tilde{s}_{t,i}$，并用于式 (\ref{eq:conflict_index_fusion}) 中的融合。
+
+\subsubsection{用于话题风险轨迹的时间箱级聚合}
+
+为了获得每个时间箱的话题级风险信号，我们以强调高风险尾部的方式，对评论级指数 $\{c_{t,i}\}_{i=1}^{n_t}$ 进行聚合（因为少量高度对抗性的评论就可能驱动升级）。设 $c^{(1)}_t \ge \cdots \ge c^{(n_t)}_t$ 为时间箱 $t$ 中排序后的指数，我们使用 top-$k$ 均值：
+\begin{equation}
+\bar{c}_t = \frac{1}{k}\sum_{j=1}^{k} c^{(j)}_t,\qquad k=\left\lceil \rho n_t \right\rceil,
+\label{eq:topk_agg}
+\end{equation}
+其中 $\rho\in[0.05,0.2]$ 控制纳入的高风险评论比例。由此得到的 $\{\bar{c}_t\}_{t=1}^T$ 构成一条平滑且可解释的风险轨迹，并作为 Sec.~III-B 中时序预测器的输入。
+
+\begin{algorithm}[t]
+\caption{无监督冲突指数计算}
+\label{alg:conflict_index}
+\begin{algorithmic}[1]
+\REQUIRE 按时间箱分组的评论 $\{x_{t,i}\}$，时间箱为 $\mathcal{B}_t$；预训练有害内容模型 $h_\psi$；零样本情绪模型 $g_\omega$；嵌入编码器 $\mathrm{Enc}$；top 比例 $\rho$
+\ENSURE 评论级指数 $\{c_{t,i}\}$ 与时间箱级轨迹 $\{\bar c_t\}$
+\FOR{$t=1$ to $T$}
+  \FOR{each comment $x_{t,i}\in\mathcal{B}_t$}
+    \STATE $a_{t,i}\leftarrow h_\psi(x_{t,i})$ \hfill （攻击先验）
+    \STATE $(p_{\text{neg}},p_{\text{anger}})\leftarrow g_\omega(x_{t,i})$
+    \STATE $e_{t,i}\leftarrow \alpha p_{\text{neg}}+(1-\alpha)p_{\text{anger}}$
+    \STATE $\mathbf{v}_{t,i}\leftarrow \mathrm{Enc}(x_{t,i})$
+  \ENDFOR
+  \STATE 将 $\{\mathbf{v}_{t,i}\}$ 聚成 $k{=}2$ 个阵营，并得到中心 $\mathbf{u}_{t,1},\mathbf{u}_{t,2}$
+  \STATE 依据式 (\ref{eq:camp_separation}) 计算 $\Delta_t$
+  \FOR{each comment $x_{t,i}\in\mathcal{B}_t$}
+    \STATE 依据式 (\ref{eq:alignment_confidence}) 计算 $q_{t,i}$；并令 $s_{t,i}\leftarrow \mathrm{norm}(\Delta_t)\cdot q_{t,i}$
+  \ENDFOR
+\ENDFOR
+\STATE 使用 ECDF 映射式 (\ref{eq:ecdf}) 对 $\tilde{a},\tilde{e},\tilde{s}$ 进行校准
+\FOR{all $(t,i)$}
+  \STATE 依据融合公式 (\ref{eq:conflict_index_fusion}) 计算 $c_{t,i}$
+\ENDFOR
+\FOR{$t=1$ to $T$}
+  \STATE 依据 top-$k$ 均值式 (\ref{eq:topk_agg}) 聚合得到 $\bar c_t$
+\ENDFOR
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{基于 LSTM 的时序升级预测}\label{sec:lstm_forecast}
+
+在从 Sec.~III-A 得到时间箱级话题风险轨迹 $\{\bar{c}_t\}_{t=1}^{T}$ 后，我们使用基于 LSTM 的预测器对其时序动态进行建模。目标是预测短时域未来风险值，从而在流式条件下实现早期预警。
+
+\subsubsection{输入窗口与预测目标}
+
+我们采用滑动窗口形式。对于每个时间箱 $t$，构造长度为 $L$ 的输入序列：
+\begin{equation}
+\mathbf{x}_t = [\bar{c}_{t-L+1},\bar{c}_{t-L+2},\dots,\bar{c}_{t}]^\top \in \mathbb{R}^{L},
+\label{eq:lstm_input_window}
+\end{equation}
+并预测未来接下来的 $H$ 个风险值：
+\begin{equation}
+\mathbf{y}_t = [\bar{c}_{t+1},\bar{c}_{t+2},\dots,\bar{c}_{t+H}]^\top \in \mathbb{R}^{H}.
+\label{eq:lstm_target_window}
+\end{equation}
+这就将原始风险轨迹转化为一个\emph{无需人工标签}的监督学习问题，其中目标值就是观测到的未来 $\bar{c}_t$。
+
+\subsubsection{LSTM 预测器结构}
+
+记 $\mathrm{LSTM}_\phi(\cdot)$ 为参数为 $\phi$ 的 LSTM。给定 $\mathbf{x}_t$ 后，LSTM 逐步处理该序列，并产生隐藏状态 $\mathbf{h}_{t,j}$，其中 $j=1,\dots,L$。我们使用最终隐藏状态 $\mathbf{h}_{t,L}$ 作为最近时序上下文的摘要，并通过线性投影得到 $H$ 步预测：
+\begin{align}
+\mathbf{h}_{t,L} &= \mathrm{LSTM}_\phi(\mathbf{x}_t), \\
+\hat{\mathbf{y}}_t &= W_o \mathbf{h}_{t,L} + \mathbf{b}_o,
+\label{eq:lstm_multistep_head}
+\end{align}
+其中 $\hat{\mathbf{y}}_t = [\hat{c}_{t+1},\dots,\hat{c}_{t+H}]^\top$ 为预测得到的风险轨迹，$(W_o,\mathbf{b}_o)$ 为可学习输出参数。该设计执行的是\emph{直接多步}预测，从而避免递归单步滚动预测中可能出现的误差累积。
+
+\subsubsection{训练目标}
+
+我们通过最小化预测轨迹与真实未来轨迹之间的差异来训练预测器。这里采用 Huber 损失这一较稳健的回归损失：
+\begin{equation}
+\mathcal{L}_{\text{pred}}(\phi) = \frac{1}{N}\sum_{t}\frac{1}{H}\sum_{h=1}^{H}
+\mathrm{Huber}\!\left(\hat{c}_{t+h}-\bar{c}_{t+h}\right),
+\label{eq:lstm_loss}
+\end{equation}
+其中 $N$ 是训练所使用的滑动窗口数量。与 MSE 相比，Huber 损失对偶发爆发点（尖峰）不那么敏感，同时又能保持稳定梯度。
+
+\subsubsection{流式场景下的在线推理}
+
+在部署阶段，每当时间箱 $t$ 结束时，我们计算 $\bar{c}_t$ 并更新输入窗口 $\mathbf{x}_t$。LSTM 预测器实时输出 $\hat{\mathbf{y}}_t$：
+\begin{equation}
+\hat{\mathbf{c}}_{t+1:t+H} = g_\phi(\bar{c}_{t-L+1:t}),
+\end{equation}
+随后将其用于 Sec.~III-C 中的早期预警触发规则。
+
+\subsubsection{实际设置}
+
+在实验中，我们将 $L$ 设置为覆盖最近上下文（例如根据时间箱长度取 $L\in[12,48]$），并将 $H$ 设置为符合短时域预警需求（例如 $H\in[3,12]$）。模型容量由 LSTM 隐层维度和 dropout 控制，并在留出的时间验证集上进行调优。
+
+\subsection{早期预警触发规则}\label{sec:warning_rules}
+
+给定 Sec.~III-B 中得到的 $H$ 步预测
+\[
+\hat{\mathbf{c}}_{t+1:t+H}=[\hat c_{t+1},\dots,\hat c_{t+H}]^\top,
+\]
+我们定义若干实用的早期预警触发规则，将预测风险轨迹转化为可执行的警报。当预测轨迹根据下列一个或多个标准表明即将发生升级时，就在时间箱 $t$ 发出警报。
+
+\subsubsection{规则 1：阈值超越（预测时域峰值触发）}
+
+最直接的触发方式，是判断预测风险是否会在未来 $H$ 个时间箱内超过预定义阈值 $\eta$：
+\begin{equation}
+\mathrm{Warn}_t^{(\mathrm{thr})}=
+\mathbb{I}\left(\max_{1\le h\le H}\hat c_{t+h}\ge \eta\right),
+\label{eq:warn_threshold}
+\end{equation}
+其中 $\mathbb{I}(\cdot)$ 为示性函数。该规则用于捕捉即将到来的高风险状态。
+
+\subsubsection{规则 2：快速增长（斜率 / 增量触发）}
+
+为了在达到绝对阈值之前识别快速上升趋势，我们加入一个基于增长的判据：
+\begin{equation}
+\mathrm{Warn}_t^{(\mathrm{grow})}=
+\mathbb{I}\left(\hat c_{t+H}-\bar c_t \ge \gamma\right),
+\label{eq:warn_growth}
+\end{equation}
+其中 $\gamma>0$ 为增长阈值。或者，我们也可以使用最大预测斜率：
+\begin{equation}
+\mathrm{Warn}_t^{(\mathrm{slope})}=
+\mathbb{I}\left(\max_{1\le h\le H}(\hat c_{t+h}-\hat c_{t+h-1})\ge \kappa\right).
+\label{eq:warn_slope}
+\end{equation}
+即使当前风险仍然中等，这两种变体也能够对突然升级保持敏感。
+
+\subsubsection{规则 3：持续性确认（连续时间箱确认）}
+
+为了减少由孤立尖峰引起的误报，我们要求触发信号在连续 $K$ 个时间箱中持续出现：
+\begin{equation}
+\mathrm{Warn}_t^{(\mathrm{pers})}=
+\mathbb{I}\left(\sum_{j=0}^{K-1}\mathrm{Warn}_{t-j}^{(\mathrm{thr})}\ge K\right),
+\label{eq:warn_persist}
+\end{equation}
+或者也可以对基于增长的触发应用持续性约束。该规则可用于滤除瞬时噪声。
+
+\subsubsection{规则 4：高风险尾部放大（尾部感知触发）}
+
+由于话题升级可能由少量高度对抗性的评论驱动，因此我们还可以选择性地引入一个在时间箱 $t$ 上计算的尾部感知信号：
+\begin{equation}
+u_t = \frac{1}{k'}\sum_{j=1}^{k'} c_t^{(j)},\qquad k'=\lceil \rho' n_t\rceil,
+\label{eq:tail_signal}
+\end{equation}
+其中 $c_t^{(j)}$ 为排序后的评论级指数，且 $\rho' < \rho$（例如 $\rho'=0.01\sim0.05$）用于聚焦极端尾部。当预测风险和尾部强度同时较高时触发警报：
+\begin{equation}
+\mathrm{Warn}_t^{(\mathrm{tail})}=
+\mathbb{I}\left(\max_{1\le h\le H}\hat c_{t+h}\ge \eta\right)\cdot
+\mathbb{I}(u_t\ge \eta_u).
+\label{eq:warn_tail}
+\end{equation}
+这种方式在“少量极端帖子引发升级”的场景下会更加稳健。
+
+\subsubsection{规则 5：复合告警分数（加权规则融合）}
+
+在实际应用中，我们将多个判据组合成一个统一的预警分数，并在其超过决策阈值时触发警报：
+\begin{equation}
+S_t = \lambda_1 \max_{1\le h\le H}\hat c_{t+h}
+      + \lambda_2 (\hat c_{t+H}-\bar c_t)
+      + \lambda_3 u_t,
+\label{eq:warn_score}
+\end{equation}
+\begin{equation}
+\mathrm{Warn}_t=\mathbb{I}(S_t\ge \tau),
+\label{eq:warn_final}
+\end{equation}
+其中 $(\lambda_1,\lambda_2,\lambda_3)$ 控制各组成部分的贡献，$\tau$ 为告警阈值。该复合设计支持灵活的工作点设置（例如高召回率或低误报率）。
+
+\subsubsection{实际参数选择}
+
+阈值 $(\eta,\gamma,\kappa,\eta_u,\tau)$ 以及持续长度 $K$ 可以在留出的时间验证阶段上进行选择，以实现早期检测与误报之间所需的折中。一般来说，$\eta$ 控制告警严重程度，$(\gamma,\kappa)$ 控制对快速升级的敏感度，而 $K$ 控制稳定性。
+
+\end{document}

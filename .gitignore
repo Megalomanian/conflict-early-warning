@@ -1,0 +1,7 @@
+*.aux *.bbl *.blg *.log *.out *.synctex.gz *.fls *.fdb_latexmk
+*.run.xml *.xdv *.nav *.snm *.toc *.vrb *.soc *.listing *.loa
+*.lof *.lot *.tdo
+*.pdf *.zip
+__pycache__/ *.pyc .venv/ *.pkl
+zhihu_topics/ venv/ .claude/
+experiment_results/ uv.lock .python-version notebook/
