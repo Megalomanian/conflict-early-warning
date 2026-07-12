@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Weakly Supervised Early Warning of Conflict Escalation</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.1.0/reveal.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.1.0/theme/white.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.1.0/plugin/highlight/monokai.min.css">
+<style>
+  :root { --r-heading-font: 'Noto Serif CJK SC', 'TeX Gyre Termes', serif; }
+  .reveal { font-size: 28px; }
+  .reveal h2 { font-size: 1.3em; color: #2c3e50; }
+  .reveal h3 { font-size: 1.1em; color: #34495e; }
+  .reveal .small { font-size: 0.7em; }
+  .reveal .xsmall { font-size: 0.55em; }
+  .reveal table { font-size: 0.65em; margin: auto; }
+  .reveal th { background: #2c3e50; color: white; padding: 6px 12px; }
+  .reveal td { padding: 4px 12px; border-bottom: 1px solid #ddd; }
+  .highlight-red { color: #e74c3c; font-weight: bold; }
+  .highlight-blue { color: #2980b9; font-weight: bold; }
+  .box { background: #f0f4f8; border-left: 4px solid #2980b9; padding: 12px 20px; margin: 10px 0; border-radius: 4px; text-align: left; }
+  .two-col { display: flex; gap: 20px; }
+  .two-col > div { flex: 1; }
+  .tag { display: inline-block; background: #e74c3c; color: white; padding: 2px 10px; border-radius: 3px; font-size: 0.6em; margin: 0 4px; }
+  .tag-green { background: #27ae60; }
+  .tag-blue { background: #2980b9; }
+  ol li, ul li { margin: 8px 0; }
+</style>
+</head>
+<body>
+<div class="reveal"><div class="slides">
+
+<!-- ===== Title ===== -->
+<section>
+  <h2>Weakly Supervised Early Warning of<br>Conflict Escalation in Social Media Comment Streams</h2>
+  <p style="margin-top:30px;color:#7f8c8d;">基于弱监督的社交媒体评论流冲突升级早期预警</p>
+  <p style="margin-top:40px;font-size:0.8em;">
+    <strong>Linli Zhu</strong> (朱林立)<sup>1</sup> &nbsp;·&nbsp; Ziqiang Ma (马自强)<sup>2</sup><br>
+    <span class="small"><sup>1</sup>School of Computer Science &nbsp;·&nbsp; <sup>2</sup>School of Information Engineering<br>Ningxia University, Yinchuan, China</span>
+  </p>
+  <p style="margin-top:20px;font-size:0.55em;color:#95a5a6;">Code: github.com/Megalomanian/conflict-early-warning</p>
+</section>
+
+<!-- ===== Motivation ===== -->
+<section>
+  <h2>Motivation</h2>
+  <div class="box">
+    <strong>Problem:</strong> Social media discussions can escalate from civil debate to hostile conflict within hours — but existing tools only analyze <em>after</em> escalation occurs.
+  </div>
+  <br>
+  <div class="two-col">
+    <div>
+      <h3>Current Limitations</h3>
+      <ul>
+        <li><span class="tag">Gap 1</span> Post-hoc sentiment analysis — too late for intervention</li>
+        <li><span class="tag">Gap 2</span> Instance-centric risk scoring — no temporal modeling</li>
+        <li><span class="tag">Gap 3</span> No early warning — detection without forecasting</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Our Solution</h3>
+      <ul>
+        <li><span class="tag-green">C1</span> Weakly supervised <strong>conflict index</strong></li>
+        <li><span class="tag-green">C2</span> <strong>CNN-BiLSTM</strong> temporal forecasting</li>
+        <li><span class="tag-green">C3</span> Practical <strong>early-warning triggers</strong></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Framework Overview ===== -->
+<section>
+  <h2>Framework Overview</h2>
+  <div style="text-align:center;font-size:0.65em;line-height:2.2;">
+    <div style="background:#2c3e50;color:white;padding:8px;border-radius:4px;margin:4px 0;">📝 Raw Comment Stream (per topic, per time bin)</div>
+    <div style="font-size:2em;color:#7f8c8d;">↓</div>
+    <div style="background:#2980b9;color:white;padding:8px;border-radius:4px;margin:4px 0;">🔍 Conflict Index Computation <span class="small">(Sec III-B)</span><br>
+    <span class="xsmall">Attack Intensity + Negative High-Arousal Emotion + Stance Polarization</span></div>
+    <div style="font-size:2em;color:#7f8c8d;">↓</div>
+    <div style="background:#27ae60;color:white;padding:8px;border-radius:4px;margin:4px 0;">📊 Bin-Level Risk Trajectory <span style="font-family:monospace;">c̄₁, c̄₂, ..., c̄_T</span></div>
+    <div style="font-size:2em;color:#7f8c8d;">↓</div>
+    <div style="background:#e74c3c;color:white;padding:8px;border-radius:4px;margin:4px 0;">🧠 CNN-BiLSTM Forecaster <span class="small">(Sec III-C)</span><br>
+    <span class="xsmall">L=12 bins input → H=6 bins forecast</span></div>
+    <div style="font-size:2em;color:#7f8c8d;">↓</div>
+    <div style="background:#8e44ad;color:white;padding:8px;border-radius:4px;margin:4px 0;">🚨 Early-Warning Trigger Rules <span class="small">(Sec III-D)</span><br>
+    <span class="xsmall">Threshold · Growth · Persistence · Tail-Aware · Composite Score</span></div>
+  </div>
+</section>
+
+<!-- ===== Conflict Index ===== -->
+<section>
+  <h2>Conflict Index Formulation</h2>
+  <p style="font-size:0.85em;"><strong>Weakly supervised</strong>: No manual labels needed</p>
+  <p style="font-size:0.75em;">\( c_{t,i} = \sigma(w_a \tilde{a}_{t,i} + w_e \tilde{e}_{t,i} + w_s \tilde{s}_{t,i} + b) \in [0,1] \)</p>
+  <table>
+    <tr><th>Component</th><th>Signal</th><th>Implementation</th><th>Weight</th></tr>
+    <tr><td><strong>Attack</strong> \(a_{t,i}\)</td><td>Antagonism, threats, abuse</td><td>BERT sentiment (1★ → attack)</td><td>0.5</td></tr>
+    <tr><td><strong>Emotion</strong> \(e_{t,i}\)</td><td>Negativity + high arousal</td><td>\(\alpha p_{neg} + (1-\alpha)p_{anger}\)</td><td>0.3</td></tr>
+    <tr><td><strong>Stance</strong> \(s_{t,i}\)</td><td>Semantic polarization</td><td>Embedding + k-means clustering</td><td>0.2</td></tr>
+  </table>
+  <br>
+  <div class="box small">
+    🔑 <strong>Key design:</strong> ECDF calibration → sigmoid fusion → top-\(k\) bin aggregation (\( \rho = 0.15 \))
+  </div>
+</section>
+
+<!-- ===== CNN-BiLSTM ===== -->
+<section>
+  <h2>CNN-BiLSTM Architecture</h2>
+  <div class="two-col">
+    <div>
+      <h3>Design</h3>
+      <ul class="small">
+        <li><strong>1D Conv Front-end</strong><br>Kernel sizes 3 &amp; 5, 32 channels<br>→ Multi-scale local patterns</li>
+        <li><strong>2-Layer BiLSTM</strong><br>64 hidden units/direction, dropout 0.2<br>→ Long-range dependencies</li>
+        <li><strong>Linear Projection Head</strong><br>Concat last-forward + first-backward<br>→ Direct multi-step forecast (H=6)</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Training</h3>
+      <ul class="small">
+        <li>Loss: Huber (\(\delta = 0.5\))</li>
+        <li>Optimizer: Adam (LR \(10^{-3}\))</li>
+        <li>Early stopping (patience=40)</li>
+        <li>Input: \(L=12\) bins (6 days @ 12h)</li>
+        <li>Output: \(H=6\) bins (3 days ahead)</li>
+      </ul>
+      <p class="small" style="margin-top:15px;"><strong>Why CNN+BiLSTM?</strong><br>CNN captures local trends &amp; bursts; BiLSTM models persistence &amp; long memory cycles.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Early Warning Rules ===== -->
+<section>
+  <h2>Early-Warning Trigger Rules</h2>
+  <table>
+    <tr><th>Rule</th><th>Mechanism</th><th>Purpose</th></tr>
+    <tr><td><strong>R1: Threshold</strong></td><td>\(\max_h \hat{c}_{t+h} \ge \eta\)</td><td>Absolute risk exceedance</td></tr>
+    <tr><td><strong>R2: Rapid Growth</strong></td><td>\(\hat{c}_{t+H} - \bar{c}_t \ge \gamma\)</td><td>Fast-rising trends</td></tr>
+    <tr><td><strong>R3: Persistence</strong></td><td>\(\sum_{j=0}^{K-1} \text{Warn}_{t-j} \ge K\)</td><td>Filter transient noise</td></tr>
+    <tr><td><strong>R4: Tail-Aware</strong></td><td>Extreme-tail intensity \(u_t\)</td><td>Small fraction driving escalation</td></tr>
+    <tr><td><strong>R5: Composite</strong></td><td>Weighted score \(S_t\)</td><td>Flexible precision–recall trade-off</td></tr>
+  </table>
+  <br>
+  <div class="box small">Inspired by <strong>EMBERS</strong> (KDD 2014, Test of Time Award) — operational forecasting with structured lead-time guarantees.</div>
+</section>
+
+<!-- ===== Experiments ===== -->
+<section>
+  <h2>Experimental Setup</h2>
+  <table>
+    <tr><th>Dataset</th><th>Scale</th><th>Purpose</th></tr>
+    <tr><td><strong>Zhihu</strong> (知乎)</td><td>140 topics, 45K comments</td><td>Real-data conflict index analysis</td></tr>
+    <tr><td><strong>Synthetic</strong></td><td>60 trajectories × 200 bins</td><td>Controlled quantitative evaluation</td></tr>
+    <tr><td><strong>Weibo Reversal</strong></td><td>3 events, 75K comments</td><td>Real-world escalation case study</td></tr>
+  </table>
+  <br>
+  <h3>6 Baselines</h3>
+  <p class="small">
+    <strong>Statistical:</strong> Persistence, AR(6) &nbsp;|&nbsp;
+    <strong>ML:</strong> SVR (RBF), XGBoost &nbsp;|&nbsp;
+    <strong>Deep:</strong> BiGRU, TCN
+  </p>
+  <br>
+  <h3>5 Research Questions</h3>
+  <p class="xsmall">RQ1: Conflict index quality · RQ2: Forecast accuracy · RQ3: Component contribution · RQ4: Design choices · RQ5: Warning reliability</p>
+</section>
+
+<!-- ===== Main Results ===== -->
+<section>
+  <h2>Main Results: Forecasting Performance</h2>
+  <table>
+    <tr><th>Model</th><th>MAE ↓</th><th>RMSE ↓</th><th>R² ↑</th><th>Esc-F1 ↑</th></tr>
+    <tr><td>Persistence</td><td>0.0298</td><td>0.0513</td><td>0.640</td><td>0.638</td></tr>
+    <tr><td>AR(6)</td><td>0.0275</td><td>0.0458</td><td>0.712</td><td>0.628</td></tr>
+    <tr><td>SVR</td><td>0.0197</td><td>0.0397</td><td>0.784</td><td>0.663</td></tr>
+    <tr><td>XGBoost</td><td>0.0212</td><td>0.0389</td><td>0.793</td><td>0.679</td></tr>
+    <tr><td>BiGRU</td><td>0.0202</td><td>0.0353</td><td>0.829</td><td>0.698</td></tr>
+    <tr style="background:#ffeaea;"><td><strong>CNN-BiLSTM (Ours)</strong></td><td><strong>0.0187</strong></td><td><strong>0.0349</strong></td><td><strong class="highlight-red">0.833</strong></td><td><strong class="highlight-red">0.710</strong></td></tr>
+  </table>
+  <br>
+  <div class="two-col">
+    <div class="box small"><strong>vs Persistence:</strong> MAE −37.2%</div>
+    <div class="box small"><strong>vs XGBoost:</strong> MAE −11.8%</div>
+    <div class="box small"><strong>vs BiGRU:</strong> R² +0.004</div>
+  </div>
+  <p class="small" style="margin-top:10px;">Volume forecasting on real Zhihu data: <strong>R² = 0.831</strong> (vs AR: 0.642)</p>
+</section>
+
+<!-- ===== Ablation ===== -->
+<section>
+  <h2>Ablation &amp; Early Warning Results</h2>
+  <div class="two-col">
+    <div>
+      <h3>Noise Robustness</h3>
+      <table>
+        <tr><th>Condition</th><th>R²</th><th>Esc-F1</th></tr>
+        <tr><td>Clean signal</td><td>0.830</td><td>0.689</td></tr>
+        <tr><td>Med noise (σ=0.03)</td><td>0.715</td><td>0.629</td></tr>
+        <tr><td>High noise (σ=0.06)</td><td>0.632</td><td>0.538</td></tr>
+        <tr><td>V. high (σ=0.10)</td><td>0.495</td><td>0.487</td></tr>
+      </table>
+      <p class="xsmall">ΔR² = −0.335: each component contributes meaningful signal</p>
+    </div>
+    <div>
+      <h3>Trigger Rules (CNN-BiLSTM)</h3>
+      <table>
+        <tr><th>Rule</th><th>Prec</th><th>Rec</th><th>F1</th></tr>
+        <tr><td>Threshold</td><td>0.812</td><td>0.596</td><td><strong>0.688</strong></td></tr>
+        <tr><td>Growth only</td><td>0.444</td><td>0.073</td><td>0.126</td></tr>
+        <tr><td>Thr + Growth</td><td>0.753</td><td><strong>0.615</strong></td><td>0.677</td></tr>
+        <tr><td>Composite</td><td><strong>0.816</strong></td><td>0.367</td><td>0.506</td></tr>
+      </table>
+      <p class="xsmall">Lead time: <strong>+0.3 ± 1.6 bins</strong> (positive = early)</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Case Study ===== -->
+<section>
+  <h2>Case Study: Weibo Reversal Events</h2>
+  <p class="small">Public Opinion Reversal Dataset (Zhang et al., 2023): 27 events, 245K comments, annotated reversal windows</p>
+  <table>
+    <tr><th>Event</th><th>Δ Conflict</th><th>CNN-BiLSTM R²</th><th>Esc-F1</th></tr>
+    <tr><td><strong>货拉拉 (Huolala)</strong> — 32K comments</td><td class="highlight-red">+0.076</td><td>0.085</td><td class="highlight-red"><strong>0.889</strong></td></tr>
+    <tr><td>张哲瀚 (Zhang Zhehan) — 22K</td><td style="color:#e67e22;">−0.092</td><td>0.192</td><td>0.000</td></tr>
+    <tr><td>苟晶 (Gou Jing) — 20K</td><td>+0.071</td><td>−0.026</td><td>0.000</td></tr>
+  </table>
+  <br>
+  <div class="two-col">
+    <div class="box small">
+      ✅ <strong>Huolala:</strong> Clear conflict–escalation coupling<br>
+      Esc-F1 = 0.889 vs Persistence 0.000
+    </div>
+    <div class="box small">
+      ⚠️ <strong>Zhang Zhehan:</strong> Fan-mobilization reversal<br>
+      Sentiment consolidates, not polarizes
+    </div>
+  </div>
+</section>
+
+<!-- ===== Contributions ===== -->
+<section>
+  <h2>Summary of Contributions</h2>
+  <ol>
+    <li><strong>Conflict-index quantification framework</strong><br>
+      <span class="small">Weakly supervised fusion of attack, emotion &amp; stance signals — interpretable, no manual labels</span></li>
+    <li><strong>CNN-BiLSTM temporal forecasting</strong><br>
+      <span class="small">Hybrid architecture: 1D Conv + BiLSTM for short-horizon risk trajectory prediction</span></li>
+    <li><strong>Practical early-warning trigger rules</strong><br>
+      <span class="small">5 complementary rules translating forecasts into actionable alerts with lead-time guarantees</span></li>
+  </ol>
+  <br>
+  <table>
+    <tr><th>Metric</th><th>Value</th></tr>
+    <tr><td>Synthetic R² / Esc-F1</td><td><strong>0.833 / 0.710</strong></td></tr>
+    <tr><td>Real Zhihu Volume R²</td><td><strong>0.831</strong></td></tr>
+    <tr><td>Case Study (Huolala) Esc-F1</td><td><strong>0.889</strong></td></tr>
+    <tr><td>Best Trigger F1 (Threshold)</td><td><strong>0.688</strong> @ 2.9% alert rate</td></tr>
+    <tr><td>Lead Time</td><td><strong>+0.3 ± 1.6 bins</strong></td></tr>
+  </table>
+</section>
+
+<!-- ===== Thank You ===== -->
+<section>
+  <h2>Thank You</h2>
+  <br>
+  <p style="font-size:1.2em;">Weakly Supervised Early Warning of<br>Conflict Escalation in Social Media Comment Streams</p>
+  <br>
+  <p class="small">
+    📧 violina2333@gmail.com &nbsp;·&nbsp; maziqiang@nxu.edu.cn<br>
+    🔗 github.com/Megalomanian/conflict-early-warning
+  </p>
+  <br>
+  <p style="color:#95a5a6;font-size:0.6em;">Questions welcome</p>
+</section>
+
+</div></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.1.0/reveal.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.1.0/plugin/highlight/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.1.0/plugin/math/math.min.js"></script>
+<script>
+  Reveal.initialize({
+    hash: true,
+    center: true,
+    width: 1200,
+    height: 700,
+    margin: 0.1,
+    transition: 'slide',
+    plugins: [ RevealHighlight, RevealMath.KaTeX ]
+  });
+</script>
+</body>
+</html>

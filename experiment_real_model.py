@@ -109,6 +109,34 @@ class CNNBiLSTM(nn.Module):
         c = self.conv(x.transpose(1, 2)).transpose(1, 2); o, _ = self.lstm(c)
         return self.proj(torch.cat([o[:, -1, :self.h], o[:, 0, self.h:]], dim=-1))
 
+# ═══ Additional baseline architectures ═══
+class BiGRUModel(nn.Module):
+    def __init__(self, h=HIDDEN):
+        super().__init__(); self.gru = nn.GRU(1, h, 2, batch_first=True, dropout=DROPOUT, bidirectional=True)
+        self.proj = nn.Linear(h * 2, H)
+    def forward(self, x): o, _ = self.gru(x); return self.proj(torch.cat([o[:, -1, :HIDDEN], o[:, 0, HIDDEN:]], dim=-1))
+
+class TCNBlock(nn.Module):
+    def __init__(self, in_ch, out_ch, kernel, dilation):
+        super().__init__()
+        self.conv = nn.Conv1d(in_ch, out_ch, kernel, padding=(kernel-1)*dilation, dilation=dilation)
+        self.relu = nn.ReLU(); self.dropout = nn.Dropout(0.1)
+        self.downsample = nn.Conv1d(in_ch, out_ch, 1) if in_ch != out_ch else None
+    def forward(self, x):
+        out = self.conv(x); out = out[:, :, :x.size(2)]
+        res = self.downsample(x) if self.downsample else x
+        return self.relu(out + res)
+
+class TCNModel(nn.Module):
+    def __init__(self, h=64):
+        super().__init__()
+        self.tcn = nn.Sequential(
+            TCNBlock(1, h, 3, 1), TCNBlock(h, h, 3, 2),
+            TCNBlock(h, h, 3, 4), TCNBlock(h, h, 3, 8))
+        self.proj = nn.Linear(h, H)
+    def forward(self, x):
+        o = self.tcn(x.transpose(1, 2)).mean(-1); return self.proj(o)
+
 def gen_traj(n=200, s=None):
     rng = np.random.RandomState(s); base = 0.3 + rng.uniform(0, 0.15)
     n_ev = rng.randint(1, 4); trend = np.zeros(n)
@@ -122,6 +150,35 @@ def gen_traj(n=200, s=None):
     for i in range(1, n): pink[i] = 0.6 * pink[i - 1] + 0.4 * white[i]
     return np.clip(base + trend + season + pink, 0, 1), (trend > 0.1).astype(int)
 
+
+def train_model_generic(model_factory, X, y, device=DEVICE):
+    """Train any model factory → model, returning metrics dict."""
+    n = len(X); n_tr = int(n * TRAIN_SPLIT)
+    perm = np.random.RandomState(42).permutation(n)
+    Xtr, ytr = X[perm[:n_tr]].to(device), y[perm[:n_tr]].to(device)
+    Xte, yte = X[perm[n_tr:]].to(device), y[perm[n_tr:]].to(device)
+    yte_np = yte.cpu().numpy()
+    tl = DataLoader(TensorDataset(Xtr, ytr), 64, True)
+    vl = DataLoader(TensorDataset(Xte, yte), 128)
+    model = model_factory().to(device); opt = torch.optim.Adam(model.parameters(), lr=LR)
+    huber = nn.HuberLoss(delta=0.5); best_vl, best_st, patience_c = float("inf"), None, 0
+    for ep in range(EPOCHS):
+        model.train()
+        for xb, yb in tl: opt.zero_grad(); huber(model(xb), yb).backward(); opt.step()
+        model.eval(); v_l = sum(huber(model(xb), yb).item() for xb, yb in vl) / len(vl)
+        if v_l < best_vl: best_vl = v_l; best_st = {k: v.cpu().clone() for k, v in model.state_dict().items()}; patience_c = 0
+        else: patience_c += 1
+        if patience_c >= PATIENCE: break
+    model.load_state_dict(best_st); model.eval()
+    with torch.no_grad(): yp = model(Xte.to(device)).cpu().numpy()
+    mae = float(np.mean(np.abs(yp - yte_np))); rmse = float(np.sqrt(np.mean((yp - yte_np)**2)))
+    ss_r = np.sum((yte_np - yp)**2); ss_t = np.sum((yte_np - yte_np.mean())**2)
+    r2 = 1 - ss_r / (ss_t + 1e-8)
+    pe = (yp.max(1) >= 0.65).astype(int); te = (yte_np.max(1) >= 0.65).astype(int)
+    tp, fp, fn = (pe & te).sum(), (pe & (1 - te)).sum(), ((1 - pe) & te).sum()
+    p = tp / (tp + fp) if (tp + fp) else 0; r = tp / (tp + fn) if (tp + fn) else 0
+    return {"mae": mae, "rmse": rmse, "r2": r2, "esc_f1": 2 * p * r / (p + r) if (p + r) else 0,
+            "y_true": yte_np, "y_pred": yp}
 
 def train_model(X, y, device=DEVICE):
     n = len(X); n_tr = int(n * TRAIN_SPLIT)
@@ -245,7 +302,12 @@ if __name__ == "__main__":
         for j in range(len(v) - L - H + 1): Xs.append(v[j:j + L]); ys.append(v[j+L:j+L+H])
     X = torch.tensor(np.array(Xs), dtype=torch.float32).unsqueeze(-1)
     y = torch.tensor(np.array(ys), dtype=torch.float32)
-    r_synth = train_model(X, y)
+    print(f"  Synthetic windows: {len(X)}")
+
+    # Train all models
+    r_cnn_lstm = train_model(X, y)  # CNN-BiLSTM (ours)
+    r_bigru = train_model_generic(lambda: BiGRUModel(), X, y)
+    r_tcn = train_model_generic(lambda: TCNModel(), X, y)
 
     # Baselines
     def train_baselines_simple(Xp, yp):
@@ -257,20 +319,29 @@ if __name__ == "__main__":
         from sklearn.linear_model import LinearRegression
         Xar_tr = Xtr[:, -6:, 0].numpy(); Xar_te = Xte[:, -6:, 0].numpy()
         y_ar = np.stack([LinearRegression().fit(Xar_tr, ytr[:, h].numpy()).predict(Xar_te) for h in range(H)], 1)
-        from xgboost import XGBRegressor
+        from sklearn.svm import SVR
         Xtr_f = Xtr[:, :, 0].numpy(); Xte_f = Xte[:, :, 0].numpy()
+        y_svr = np.stack([SVR(kernel='rbf', C=1.0, epsilon=0.01).fit(Xtr_f, ytr[:, h].numpy()).predict(Xte_f) for h in range(H)], 1)
+        from xgboost import XGBRegressor
         y_xgb = np.stack([XGBRegressor(n_estimators=100, max_depth=4, learning_rate=0.1, verbosity=0).fit(Xtr_f, ytr[:, h].numpy()).predict(Xte_f) for h in range(H)], 1)
         def m(yp_v):
             mae = float(np.mean(np.abs(yp_v - yte_np)))
+            rmse = float(np.sqrt(np.mean((yp_v - yte_np)**2)))
             ss_r = np.sum((yte_np - yp_v)**2); ss_t = np.sum((yte_np - yte_np.mean())**2)
-            return {"mae": mae, "r2": 1 - ss_r / (ss_t + 1e-8)}
-        return {"Persistence": m(y_p), "AR(6)": m(y_ar), "XGBoost": m(y_xgb)}
+            r2 = 1 - ss_r / (ss_t + 1e-8)
+            pe = (yp_v.max(1) >= 0.65).astype(int); te = (yte_np.max(1) >= 0.65).astype(int)
+            tp, fp, fn = (pe & te).sum(), (pe & (1 - te)).sum(), ((1 - pe) & te).sum()
+            p, r = tp / (tp + fp) if (tp + fp) else 0, tp / (tp + fn) if (tp + fn) else 0
+            return {"mae": mae, "rmse": rmse, "r2": r2, "esc_f1": 2 * p * r / (p + r) if (p + r) else 0}
+        return {"Persistence": m(y_p), "AR(6)": m(y_ar), "SVR": m(y_svr), "XGBoost": m(y_xgb)}
 
     bl = train_baselines_simple(X, y)
-    print(f"\nSynthetic Forecasting Results:")
-    for n in ["Persistence", "AR(6)", "XGBoost"]:
-        print(f"  {n:12s} R²={bl[n]['r2']:.4f} MAE={bl[n]['mae']:.4f}")
-    print(f"  {'CNN-BiLSTM':12s} R²={r_synth['r2']:.4f} MAE={r_synth['mae']:.4f} Esc-F1={r_synth['esc_f1']:.4f}")
+    print(f"\nSynthetic Forecasting Results (N_test={int(len(X)*(1-TRAIN_SPLIT))}):")
+    for n in ["Persistence", "AR(6)", "SVR", "XGBoost", "BiGRU", "TCN"]:
+        if n in bl: print(f"  {n:12s} R²={bl[n]['r2']:.4f} MAE={bl[n]['mae']:.4f}")
+        elif n == "BiGRU": print(f"  {n:12s} R²={r_bigru['r2']:.4f} MAE={r_bigru['mae']:.4f} Esc-F1={r_bigru['esc_f1']:.4f}")
+        elif n == "TCN": print(f"  {n:12s} R²={r_tcn['r2']:.4f} MAE={r_tcn['mae']:.4f} Esc-F1={r_tcn['esc_f1']:.4f}")
+    print(f"  {'CNN-BiLSTM':12s} R²={r_cnn_lstm['r2']:.4f} MAE={r_cnn_lstm['mae']:.4f} Esc-F1={r_cnn_lstm['esc_f1']:.4f}")
 
     # ── Real data forecasting ──
     print("\n" + "=" * 60)
@@ -293,14 +364,22 @@ if __name__ == "__main__":
 
     # Summary
     print(f"\n{'═'*50}")
-    print(f"Summary: Real Pretrained Model + CNN-BiLSTM")
-    print(f"  Synthetic: R²={r_synth['r2']:.4f} Esc-F1={r_synth['esc_f1']:.4f}")
+    print(f"Summary: Real Pretrained Model + All Baselines")
+    print(f"  CNN-BiLSTM (Ours): R²={r_cnn_lstm['r2']:.4f} MAE={r_cnn_lstm['mae']:.4f} Esc-F1={r_cnn_lstm['esc_f1']:.4f}")
+    print(f"  BiGRU:             R²={r_bigru['r2']:.4f} MAE={r_bigru['mae']:.4f} Esc-F1={r_bigru['esc_f1']:.4f}")
+    print(f"  TCN:               R²={r_tcn['r2']:.4f} MAE={r_tcn['mae']:.4f} Esc-F1={r_tcn['esc_f1']:.4f}")
+    print(f"  SVR:               R²={bl['SVR']['r2']:.4f} MAE={bl['SVR']['mae']:.4f}")
+    print(f"  XGBoost:           R²={bl['XGBoost']['r2']:.4f} MAE={bl['XGBoost']['mae']:.4f}")
     if len(topic_windows) >= 30:
-        print(f"  Real data: R²={r_real['r2']:.4f}")
+        print(f"  Real data:         R²={r_real['r2']:.4f}")
 
+    # Merge all results
+    all_results = {"synthetic": r_cnn_lstm, "real": r_real,
+                   "BiGRU": r_bigru, "TCN": r_tcn,
+                   "baselines": bl, "trajectories": trajectories}
     with open(f"{R_DIR}/real_model_results.pkl", "wb") as f:
-        pickle.dump({"synthetic": r_synth, "real": r_real, "baselines": bl, "trajectories": trajectories}, f)
+        pickle.dump(all_results, f)
 
     tmin = (time.time() - t0) / 60
     print(f"\nDone in {tmin:.1f} min")
-    notify(f"Real model experiment done! Synthetic R²={r_synth['r2']:.4f} ({tmin:.1f}min)")
+    notify(f"Full experiment done! CNN-BiLSTM R²={r_cnn_lstm['r2']:.4f} BiGRU R²={r_bigru['r2']:.4f} TCN R²={r_tcn['r2']:.4f} ({tmin:.1f}min)")
