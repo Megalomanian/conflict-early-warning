@@ -243,7 +243,7 @@ def fig_trajectory_forecast(results, traj_seed=42):
     # (b) Zoom: forecast vs actual
     ax = axes[1]
     # Use BiLSTM predictions on a test sample
-    bi_result = results.get("BiLSTM (Ours)")
+    bi_result = results.get("CNN-BiLSTM") or results.get("BiLSTM")
     if bi_result is None:
         bi_result = list(results.values())[-1]
     yt, yp = bi_result["y_true"], bi_result["y_pred"]
@@ -320,7 +320,7 @@ def fig_model_comparison(results):
 
 def fig_training_curves(results):
     """Fig 4: Training and validation loss for the best model."""
-    bi = results.get("BiLSTM (Ours)") or list(results.values())[-1]
+    bi = results.get("CNN-BiLSTM") or results.get("BiLSTM") or list(results.values())[-1]
     tl, vl = bi.get("train_losses", []), bi.get("val_losses", [])
     if not tl: return
 
@@ -336,7 +336,7 @@ def fig_training_curves(results):
                 fontsize=7, color='gray')
     ax.set_xlabel('Epoch')
     ax.set_ylabel('Huber Loss')
-    ax.set_title('BiLSTM Training Convergence')
+    ax.set_title('CNN-BiLSTM Training Convergence')
     ax.legend(framealpha=0.9)
     ax.grid(alpha=0.3)
     fig.tight_layout()
@@ -473,7 +473,7 @@ if __name__ == "__main__":
 
     # ── Neural Models ──
     models = [
-        ("BiLSTM (Ours)", BiLSTM),
+        ("BiLSTM", BiLSTM),
         ("BiGRU", BiGRU),
         ("Deep BiLSTM", DeepBiLSTM),
         ("Attn-BiLSTM", AttnLSTM),

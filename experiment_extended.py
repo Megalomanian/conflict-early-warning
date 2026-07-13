@@ -251,7 +251,7 @@ if __name__ == "__main__":
 
     # Neural models
     models = [
-        ("BiLSTM (Ours)", BiLSTM),
+        ("BiLSTM", BiLSTM),
         ("Deep BiLSTM (3L)", DeepBiLSTM),
         ("Attn-BiLSTM", AttnLSTM),
         ("CNN-BiLSTM", CNNLSTM),

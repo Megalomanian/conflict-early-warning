@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
 """
+[DEPRECATED] Keyword-based conflict index experiment.
+Replaced by experiment_real_model.py (real BERT model).
+Kept for historical reference only. Do NOT use for paper results.
+"""
+import warnings; warnings.warn("experiment.py is DEPRECATED. Use experiment_real_model.py instead.")
+
+"""
 Experiment: Weakly Supervised Early Warning of Conflict Escalation.
 Two-part design:
   Part A (real data): Demonstrate conflict-index components on zhihu topics
