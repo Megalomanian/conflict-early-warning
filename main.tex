@@ -360,7 +360,7 @@ Table~\ref{tab:trajectory_stats} summarizes the bin-level conflict-index traject
 
 \subsubsection{LSTM Forecasting Performance (RQ2)}
 
-Figure~\ref{fig:trajectory} shows a sample synthetic conflict trajectory and a representative multi-step forecast. Table~\ref{tab:forecast_results} reports full forecasting results under the strict temporal-split protocol ($\sim$8,235 training windows, $\sim$2,745 test windows, all metrics are mean $\pm$ std over 5 independent seeds). The deep sequential models---\textbf{CNN-BiLSTM} (R\textsuperscript{2}=$0.812\pm0.008$), \textbf{BiGRU} (R\textsuperscript{2}=$0.811\pm0.009$), and \textbf{Transformer} (R\textsuperscript{2}=$0.806\pm0.007$)---form a tight top tier with overlapping confidence intervals, all significantly outperforming non-neural baselines. The progression from statistical baselines through classical machine learning to deep architectures demonstrates consistent gains: XGBoost (R\textsuperscript{2}=$0.781$) improves substantially over AR(6) (R\textsuperscript{2}=$0.715$) by leveraging non-linear feature interactions, and the deep models further improve by 2--4 percentage points through learned temporal representations. CNN-BiLSTM's modest edge over BiGRU ($\Delta$R\textsuperscript{2}=$+0.001$) indicates that the CNN front-end provides a small but consistent benefit for local pattern extraction, though the difference falls within one standard deviation. The Transformer with learnable positional encoding achieves competitive results (R\textsuperscript{2}=$0.806$), demonstrating that with appropriate inductive biases, self-attention-based architectures can match recurrent models even on short sequences ($L{=}12$). The Informer-Lite variant (R\textsuperscript{2}=$0.796$) shows no advantage over the standard Transformer at this sequence length, consistent with its design motivation for long-sequence efficiency. Figure~\ref{fig:model_comp} visualizes the full model comparison.
+Figure~\ref{fig:trajectory} shows a sample synthetic conflict trajectory and a representative multi-step forecast. Table~\ref{tab:forecast_results} reports full forecasting results under the strict temporal-split protocol ($\sim$8,235 training windows, $\sim$2,745 test windows, all metrics are mean $\pm$ std over 5 independent seeds). The deep sequential models---\textbf{CNN-BiLSTM} (R\textsuperscript{2}=$0.812\pm0.008$), \textbf{BiGRU} (R\textsuperscript{2}=$0.811\pm0.009$), and \textbf{Transformer} (R\textsuperscript{2}=$0.806\pm0.007$)---form a tight top tier with overlapping confidence intervals, all significantly outperforming non-neural baselines. The progression from statistical baselines through classical machine learning to deep architectures demonstrates consistent gains: XGBoost (R\textsuperscript{2}=$0.781$) improves substantially over AR(6) (R\textsuperscript{2}=$0.715$) by leveraging non-linear feature interactions, and the deep models further improve by 2--4 percentage points through learned temporal representations. BiGRU ($0.811$) and CNN-BiLSTM ($0.809$) are statistically indistinguishable ($\Delta$R\textsuperscript{2}=$-0.002$, within one standard deviation), indicating that both architectures perform at the same level and the CNN front-end provides no meaningful advantage over the simpler recurrent baseline on these trajectories. The Transformer with learnable positional encoding achieves competitive results (R\textsuperscript{2}=$0.806$), demonstrating that with appropriate inductive biases, self-attention-based architectures can match recurrent models even on short sequences ($L{=}12$). The Informer-Lite variant (R\textsuperscript{2}=$0.796$) shows no advantage over the standard Transformer at this sequence length, consistent with its design motivation for long-sequence efficiency. Figure~\ref{fig:model_comp} visualizes the full model comparison.
 
 \begin{figure}[t]
 \centering
@@ -381,11 +381,12 @@ Exp.\ Smoothing & 0.498$\pm$0.022 & 0.0379 & 0.0645 & 0.430 \\
 AR(6) & 0.715$\pm$0.011 & 0.0293 & 0.0486 & 0.644 \\
 SVR~\cite{Mu2023IPSO} & 0.759$\pm$0.024 & 0.0222 & 0.0448 & 0.667 \\
 XGBoost & 0.781$\pm$0.013 & 0.0232 & 0.0427 & 0.684 \\
-BiGRU & 0.811$\pm$0.009 & 0.0221 & 0.0397 & \textbf{0.716} \\
 TCN & 0.787$\pm$0.010 & 0.0238 & 0.0421 & 0.695 \\
-Transformer + PE & 0.806$\pm$0.007 & 0.0227 & 0.0402 & 0.697 \\
 Informer-Lite & 0.796$\pm$0.012 & 0.0231 & 0.0412 & 0.662 \\
-\textbf{CNN-BiLSTM (Ours)} & \textbf{0.812}$\pm$\textbf{0.008} & \textbf{0.0220} & \textbf{0.0395} & \textbf{0.718} \\
+BiLSTM & 0.805$\pm$0.011 & 0.0227 & 0.0403 & 0.711 \\
+Transformer + PE & 0.806$\pm$0.007 & 0.0227 & 0.0402 & 0.697 \\
+BiGRU & 0.811$\pm$0.009 & 0.0221 & 0.0397 & \textbf{0.716} \\
+\textbf{CNN-BiLSTM (Ours)} & \textbf{0.809}$\pm$\textbf{0.010} & \textbf{0.0223} & \textbf{0.0398} & \textbf{0.710} \\
 \bottomrule
 \end{tabular}
 \vspace{4pt}
