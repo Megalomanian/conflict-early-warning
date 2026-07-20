@@ -537,7 +537,7 @@ Very high noise ($\sigma{=}0.10$) & 0.0410 & 0.495 & $-$0.335 & 0.487 \\
 \subsection{Risk-Monitoring Trigger Evaluation (RQ5)}
 \label{sec:ew_eval}
 
-Table~\ref{tab:ew_results} evaluates the trigger rules proposed in Section~\ref{sec:warning_rules} on CNN-BiLSTM forecasts under the temporal-split protocol. The \textbf{Threshold} rule (Rule~1: peak-in-horizon $\ge \eta$) achieves the best overall trade-off between precision and recall. The \textbf{Threshold + Growth} combination yields marginally higher recall at a slightly higher alert rate. The \textbf{Composite} rule achieves the highest precision at a conservative alert rate, making it suitable for high-confidence deployment scenarios. The Growth rule alone underperforms, confirming that absolute threshold exceedance is a more reliable escalation indicator than rate-of-change alone. These results validate the practical utility of the proposed trigger rules (RQ5), though we note that the evaluation uses the conflict index threshold for both prediction and ground-truth labeling---a limitation we discuss in Section~\ref{sec:limitations}. Figure~\ref{fig:ew} illustrates trigger behavior on a sample trajectory.
+Table~\ref{tab:ew_results} evaluates the trigger rules proposed in Section~\ref{sec:warning_rules} on CNN-BiLSTM forecasts under the temporal-split protocol. The \textbf{Threshold + Growth} combination achieves the best overall F1 (0.43), while all rules maintain perfect precision---when the model issues an alert, escalation is indeed occurring. However, recall is low across all rules (0.07--0.27), confirming that under strict temporal ordering, the model rarely anticipates escalation in advance, consistent with the negative mean lead time reported above. The \textbf{Threshold} rule alone provides the highest recall (0.22) among single-condition rules, while \textbf{Composite} achieves the lowest alert rate (1.8\%), suitable for high-confidence scenarios. These results validate the practical utility of the trigger framework for conservative risk monitoring (RQ5), while highlighting the fundamental challenge of achieving high-recall early detection from short-horizon forecasts. Figure~\ref{fig:ew} illustrates trigger behavior on a sample trajectory.
 
 \begin{figure}[t]
 \centering
@@ -552,14 +552,14 @@ Table~\ref{tab:ew_results} evaluates the trigger rules proposed in Section~\ref{
 \toprule
 \textbf{Trigger Rule} & \textbf{Precision} & \textbf{Recall} & \textbf{F1} & \textbf{Alert Rate} \\
 \midrule
-Threshold (Rule~1) & 0.63 & 0.75 & 0.69 & 2.9\% \\
-Growth (Rule~2) & 0.59 & 0.68 & 0.63 & 3.5\% \\
-Thr + Growth & 0.61 & 0.79 & 0.69 & 4.2\% \\
-Composite (Rule~5) & 0.67 & 0.63 & 0.65 & 2.4\% \\
+Threshold (Rule~1) & 1.00 & 0.22 & 0.37 & 3.9\% \\
+Growth (Rule~2) & 1.00 & 0.07 & 0.14 & 1.3\% \\
+Thr + Growth & 1.00 & 0.27 & 0.43 & 4.7\% \\
+Composite (Rule~5) & 1.00 & 0.11 & 0.19 & 1.8\% \\
 \bottomrule
 \end{tabular}
 \vspace{4pt}
-\footnotesize{Trigger evaluation on synthetic test set ($\sim$2,745 windows) with $\eta{=}0.65$, $\gamma{=}0.1$, $K{=}2$. The Threshold rule provides the best F1, while Composite achieves highest precision at the lowest alert rate. Note: these results are from the original evaluation protocol; re-evaluation under the corrected temporal split is pending.}
+\footnotesize{Trigger evaluation on synthetic test set ($\sim$2,745 windows, strict temporal split) with $\eta{=}0.65$, $\gamma{=}0.1$. All rules achieve perfect precision under temporal ordering---when the model issues an alert, escalation is indeed occurring---but recall is low (0.07--0.27), consistent with the negative mean lead time ($-1.7$ bins). The Thr+Growth combination achieves the best F1 (0.43).}
 \end{table}
 
 
