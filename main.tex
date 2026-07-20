@@ -470,7 +470,7 @@ Beyond binary escalation detection, we measure \emph{lead time}: how many bins b
 \end{figure}
 
 \begin{table}[t]
-\caption{Ablation: effect of signal degradation on CNN-BiLSTM forecasting.}\label{tab:ablation}
+\caption{Ablation: effect of signal degradation on CNN-BiLSTM forecasting (single-run results with seed 42).}\label{tab:ablation}
 \centering
 \begin{tabular}{lcccc}
 \toprule
@@ -496,7 +496,7 @@ To validate the framework on real-world conflict escalation data, we conduct a c
 
 Across all three events, the conflict index shows modest but consistent positive shifts during reversal windows (mean increase $+0.005$ to $+0.015$), suggesting that the unsupervised index captures genuine escalation signals, albeit with modest effect sizes. CNN-BiLSTM consistently outperforms Persistence and AR baselines on forecasting R\textsuperscript{2} for the Huolala and Zhang Zhehan events, though the absolute R\textsuperscript{2} values on these short, noisy event trajectories are lower than on synthetic data, reflecting the inherent challenge of conflict forecasting on real-world comment streams. Performance varies by event type: events with clear opinion polarization (Huolala, Zhang Zhehan) show stronger conflict-index modulation than those driven primarily by information revelation (Gou Jing). We note that the reversal window annotation, while valuable, is not a direct measure of comment-level conflict intensity, and the relationship between ``opinion reversal'' and ``conflict escalation'' warrants further investigation.
 
-\subsection{Why Does the Conflict Index Fail on Sparse Data?}\label{sec:attribution}
+\subsection{Why Does the Conflict Index Fail on Sparse Data?}\label{sec:discussion}\label{sec:attribution}
 
 The near-zero R\textsuperscript{2} of the conflict index on Zhihu data ($\approx 0$) contrasts sharply with the strong performance of comment volume on Weibo data ($0.715$). To isolate the cause, we conduct a systematic attribution analysis across four hypotheses:
 
