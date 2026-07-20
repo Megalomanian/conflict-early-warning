@@ -83,11 +83,8 @@ We introduce an unsupervised \emph{conflict index} that quantifies antagonistic 
 \noindent\textbf{(I-C2) Topic-level temporal forecasting via bin-level risk trajectories (Sec.~\ref{sec:lstm_forecast}):}
 We aggregate comment-level conflict scores into bin-level topic risk trajectories and use deep sequential forecasters (CNN-BiLSTM, BiGRU, Transformer) to model persistence, volatility, and rising trends. This enables short-horizon prediction of future topic risk under streaming conditions, with several architectures achieving comparable forecasting accuracy.
 
-\noindent\textbf{(I-C3) Practical risk-monitoring trigger rules (Sec.~III-D):}
-We further design a set of trigger rules based on threshold exceedance, rapid growth, persistence, and tail-risk amplification, translating predicted trajectories into actionable risk alerts for public-opinion surveillance. We also identify the inherent challenge of achieving positive lead time in short-horizon forecasting and characterize its empirical distribution.
-
 \subsection{Paper Structure Overview}
-The remainder of this paper is organized as follows. Section~II reviews related studies in sentiment analysis, harmful content detection, and temporal modeling. Section~III presents the proposed framework, including the conflict-index formulation, temporal forecasting, and risk-monitoring trigger rules. Section~IV outlines the experimental design and research questions, followed by concluding remarks and future directions.
+The remainder of this paper is organized as follows. Section~II reviews related studies in sentiment analysis, harmful content detection, and temporal modeling. Section~III presents the proposed framework, including the conflict-index formulation and temporal forecasting. Section~IV outlines the experimental design and research questions, followed by concluding remarks and future directions.
 
 \section{Related Work}
 
@@ -263,78 +260,7 @@ We train the forecaster by minimizing the Huber loss between predicted and obser
 where $N$ is the number of sliding windows used for training, and the Huber delta is set to 0.5.
 
 \subsubsection{Online Inference}
-In deployment, at the end of each bin $t$, we compute $\bar{c}_t$ and update the input window $\mathbf{x}_t$. The CNN-BiLSTM outputs $\hat{\mathbf{y}}_t$ in real time, which is then fed to the early-warning trigger rules in Sec.~\ref{sec:warning_rules}.
-\subsection{Early-Warning Trigger Rules}\label{sec:warning_rules}
-
-The design of practical early-warning triggers is motivated by operational forecasting systems such as EMBERS~\cite{ramakrishnan2014embers}, which demonstrated that automated civil-unrest forecasting with structured lead-time guarantees is feasible at scale using open-source indicators. Following this philosophy, we translate predicted risk trajectories into actionable alerts.
-
-Given the $H$-step forecast $\hat{\mathbf{c}}_{t+1:t+H}=[\hat c_{t+1},\dots,\hat c_{t+H}]^\top$ from Sec.~III-B, we define practical early-warning trigger rules that translate predicted risk trajectories into actionable alerts. An alert at time bin $t$ is issued when the predicted trajectory indicates imminent escalation according to one or more criteria below.
-
-\subsubsection{Rule 1: Threshold Exceedance (Peak-in-Horizon)}
-The most direct trigger is whether the predicted risk is expected to exceed a predefined threshold $\eta$ within the next $H$ bins:
-\begin{equation}
-\mathrm{Warn}_t^{(\mathrm{thr})}=
-\mathbb{I}\left(\max_{1\le h\le H}\hat c_{t+h}\ge \eta\right),
-\label{eq:warn_threshold}
-\end{equation}
-where $\mathbb{I}(\cdot)$ is the indicator function. This rule captures imminent high-risk states.
-
-\subsubsection{Rule 2: Rapid Growth (Slope / Delta Trigger)}
-To detect fast-rising trends before reaching the absolute threshold, we add a growth-based criterion:
-\begin{equation}
-\mathrm{Warn}_t^{(\mathrm{grow})}=
-\mathbb{I}\left(\hat c_{t+H}-\bar c_t \ge \gamma\right),
-\label{eq:warn_growth}
-\end{equation}
-where $\gamma>0$ is a growth threshold. Alternatively, we can use the maximum predicted slope:
-\begin{equation}
-\mathrm{Warn}_t^{(\mathrm{slope})}=
-\mathbb{I}\left(\max_{1\le h\le H}(\hat c_{t+h}-\hat c_{t+h-1})\ge \kappa\right).
-\label{eq:warn_slope}
-\end{equation}
-These variants are sensitive to sudden escalation even when current risk is moderate.
-
-\subsubsection{Rule 3: Persistence (Consecutive-Bin Confirmation)}
-To reduce false alarms caused by isolated spikes, we require the trigger to persist for $K$ consecutive bins:
-\begin{equation}
-\mathrm{Warn}_t^{(\mathrm{pers})}=
-\mathbb{I}\left(\sum_{j=0}^{K-1}\mathrm{Warn}_{t-j}^{(\mathrm{thr})}\ge K\right),
-\label{eq:warn_persist}
-\end{equation}
-or equivalently apply persistence to the growth-based trigger. This rule filters out transient noise.
-
-\subsubsection{Rule 4: High-Risk Tail Amplification (Tail-Aware Trigger)}
-Since topic escalation may be driven by a small fraction of highly antagonistic comments, we optionally incorporate a tail-aware signal computed in bin $t$:
-\begin{equation}
-u_t = \frac{1}{k'}\sum_{j=1}^{k'} c_t^{(j)},\qquad k'=\lceil \rho' n_t\rceil,
-\label{eq:tail_signal}
-\end{equation}
-where $c_t^{(j)}$ are sorted comment-level indices and $\rho' < \rho$ (e.g., $\rho'=0.01\sim0.05$) focuses on the extreme tail. We trigger if both predicted risk and tail intensity are high:
-\begin{equation}
-\mathrm{Warn}_t^{(\mathrm{tail})}=
-\mathbb{I}\left(\max_{1\le h\le H}\hat c_{t+h}\ge \eta\right)\cdot
-\mathbb{I}(u_t\ge \eta_u).
-\label{eq:warn_tail}
-\end{equation}
-This improves robustness in scenarios where escalation is initiated by a small number of extreme posts.
-
-\subsubsection{Rule 5: Composite Alert Score (Weighted Rule Fusion)}
-In practice, we combine multiple criteria into a single warning score and alert if it exceeds a decision threshold:
-\begin{equation}
-S_t = \lambda_1 \max_{1\le h\le H}\hat c_{t+h}
-      + \lambda_2 (\hat c_{t+H}-\bar c_t)
-      + \lambda_3 u_t,
-\label{eq:warn_score}
-\end{equation}
-\begin{equation}
-\mathrm{Warn}_t=\mathbb{I}(S_t\ge \tau),
-\label{eq:warn_final}
-\end{equation}
-where $(\lambda_1,\lambda_2,\lambda_3)$ control the contributions and $\tau$ is the alert threshold. This composite design supports flexible operating points (high recall vs. low false-positive rate).
-
-\subsubsection{Practical Parameter Choices}
-Thresholds $(\eta,\gamma,\kappa,\eta_u,\tau)$ and persistence length $K$ can be selected on a held-out temporal validation period to achieve desired trade-offs between early detection and false alarms. In general, $\eta$ controls alert severity, while $(\gamma,\kappa)$ control sensitivity to rapid escalation and $K$ controls stability.
-
+In deployment, at the end of each bin $t$, we compute $\bar{c}_t$ and update the input window $\mathbf{x}_t$. The CNN-BiLSTM outputs $\hat{\mathbf{y}}_t$ in real time, providing continuous risk forecasts for downstream monitoring applications.
 \section{Experiments}\label{sec:experiments}
 
 \subsection{Research Questions}
@@ -348,8 +274,6 @@ The experiments are designed to answer the following research questions.
 \noindent\textbf{RQ3:} How much do the three conflict components---attack intensity, negative high-arousal emotion, and stance polarization---contribute to forecasting and early-warning performance?
 
 \noindent\textbf{RQ4:} Do the proposed design choices, including ECDF-based score calibration and top-$k$ bin-level aggregation, improve the quality of the resulting risk trajectories and downstream prediction results?
-
-\noindent\textbf{RQ5:} Can the proposed early-warning trigger rules provide timely and reliable alerts for imminent conflict escalation, while balancing sensitivity and false alarms?
 
 \subsection{Dataset and Preprocessing}
 \label{sec:dataset}
@@ -532,34 +456,6 @@ High noise ($\sigma{=}0.06$) & 0.0334 & 0.632 & $-$0.198 & 0.538 \\
 Very high noise ($\sigma{=}0.10$) & 0.0410 & 0.495 & $-$0.335 & 0.487 \\
 \bottomrule
 \end{tabular}
-\end{table}
-
-\subsection{Risk-Monitoring Trigger Evaluation (RQ5)}
-\label{sec:ew_eval}
-
-Table~\ref{tab:ew_results} evaluates the trigger rules proposed in Section~\ref{sec:warning_rules} on CNN-BiLSTM forecasts under the temporal-split protocol. The \textbf{Threshold + Growth} combination achieves the best overall F1 (0.43), while all rules maintain perfect precision---when the model issues an alert, escalation is indeed occurring. However, recall is low across all rules (0.07--0.27), confirming that under strict temporal ordering, the model rarely anticipates escalation in advance, consistent with the negative mean lead time reported above. The \textbf{Threshold} rule alone provides the highest recall (0.22) among single-condition rules, while \textbf{Composite} achieves the lowest alert rate (1.8\%), suitable for high-confidence scenarios. These results validate the practical utility of the trigger framework for conservative risk monitoring (RQ5), while highlighting the fundamental challenge of achieving high-recall early detection from short-horizon forecasts. Figure~\ref{fig:ew} illustrates trigger behavior on a sample trajectory.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\columnwidth]{figures/fig_early_warning.pdf}
-\caption{Early warning visualization: triggers fire when CNN-BiLSTM predicts threshold exceedance ($\eta=0.65$) within the forecast horizon.}\label{fig:ew}
-\end{figure}
-
-\begin{table}[t]
-\caption{Early-warning trigger rule evaluation on CNN-BiLSTM forecasts (temporal split).}\label{tab:ew_results}
-\centering
-\begin{tabular}{lcccc}
-\toprule
-\textbf{Trigger Rule} & \textbf{Precision} & \textbf{Recall} & \textbf{F1} & \textbf{Alert Rate} \\
-\midrule
-Threshold (Rule~1) & 1.00 & 0.22 & 0.37 & 3.9\% \\
-Growth (Rule~2) & 1.00 & 0.07 & 0.14 & 1.3\% \\
-Thr + Growth & 1.00 & 0.27 & 0.43 & 4.7\% \\
-Composite (Rule~5) & 1.00 & 0.11 & 0.19 & 1.8\% \\
-\bottomrule
-\end{tabular}
-\vspace{4pt}
-\footnotesize{Trigger evaluation on synthetic test set ($\sim$2,745 windows, strict temporal split) with $\eta{=}0.65$, $\gamma{=}0.1$. All rules achieve perfect precision under temporal ordering---when the model issues an alert, escalation is indeed occurring---but recall is low (0.07--0.27), consistent with the negative mean lead time ($-1.7$ bins). The Thr+Growth combination achieves the best F1 (0.43).}
 \end{table}
 
 

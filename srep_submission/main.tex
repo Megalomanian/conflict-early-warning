@@ -51,7 +51,6 @@ To address these limitations, we propose an unsupervised framework for topic-lev
 \begin{itemize}
 \item \textbf{Conflict-index quantification:} An unsupervised conflict index combining attack, emotion, and stance signals into a unified post-level score, providing an interpretable bridge between raw text and temporal risk modeling.
 \item \textbf{Topic-level temporal forecasting:} Aggregation of comment-level scores into bin-level trajectories, modeled by deep sequential forecasters (CNN-BiLSTM, BiGRU, Transformer) for short-horizon prediction under streaming conditions.
-\item \textbf{Practical risk-monitoring triggers:} A set of trigger rules based on threshold exceedance, rapid growth, persistence, and tail-risk amplification for public-opinion surveillance.
 \item \textbf{Strict empirical evaluation:} Comprehensive comparison under temporal-split protocol with 5-seed statistical significance, honest lead-time characterization, and real-world case studies.
 \end{itemize}
 
@@ -213,14 +212,8 @@ We measure lead time as the difference between predicted and ground-truth escala
 \label{fig:lead}
 \end{figure}
 
-Five practical trigger rules are introduced for risk monitoring: threshold exceedance, rapid growth, persistence confirmation, tail-risk amplification, and a composite score. The composite score achieves the best trigger F1 of 0.690 at a 2.9\% alert rate. Figure~\ref{fig:warning} illustrates the trigger mechanism on a sample trajectory. Weight sensitivity analysis (random search over 40 Dirichlet-sampled configurations) confirms that the fusion design is robust to moderate variations around the default weights $(0.5, 0.3, 0.2)$.
+Weight sensitivity analysis (random search over 40 Dirichlet-sampled configurations) confirms that the fusion design is robust to moderate variations around the default weights $(0.5, 0.3, 0.2)$.
 
-\begin{figure}[h]
-\centering
-\includegraphics[width=0.85\textwidth]{../figures/fig_early_warning.pdf}
-\caption{Risk-monitoring trigger visualization on a sample trajectory. Trigger points (red) mark where predictions exceed the threshold $\eta=0.65$.}
-\label{fig:warning}
-\end{figure}
 
 % ======================================================================
 \section{Discussion}
@@ -256,16 +249,7 @@ The forecaster takes a lookback window $\mathbf{x}_t = [\bar{c}_{t-L+1},\dots,\b
 
 Training uses Huber loss ($\delta=0.5$), Adam optimizer ($\text{lr}=10^{-3}$), batch size 64, and early stopping with patience 25. All neural baselines are trained under identical conditions for fair comparison. The evaluation protocol enforces strict temporal ordering: for each topic, the first 75\% of time bins form the training set and the last 25\% form the test set, with no shuffling.
 
-\subsection{Trigger Rules for Risk Monitoring}
 
-Five trigger rules translate predicted trajectories into alerts:
-\begin{enumerate}
-\item \textbf{Threshold:} $\mathrm{Warn}_t = \mathbb{I}(\max_{h} \hat{c}_{t+h} \ge \eta)$, with $\eta=0.65$.
-\item \textbf{Rapid growth:} $\mathrm{Warn}_t = \mathbb{I}(\hat{c}_{t+H} - \bar{c}_t \ge \gamma)$, with $\gamma=0.1$.
-\item \textbf{Persistence:} Requires $\mathrm{Warn}_t$ to hold for $K{=}2$ consecutive bins.
-\item \textbf{Tail-risk:} Multiplies the threshold trigger by an extreme-tail signal $u_t$ (top $\rho'{=}0.02$ comments).
-\item \textbf{Composite score:} $S_t = \lambda_1 \max_h \hat{c}_{t+h} + \lambda_2 (\hat{c}_{t+H}-\bar{c}_t) + \lambda_3 u_t$, with $\lambda = (0.5, 0.3, 0.2)$.
-\end{enumerate}
 
 \subsection{Data Availability}
 
