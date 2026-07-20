@@ -1,0 +1,218 @@
+% PLOS ONE submission — Boundary Conditions for Conflict Forecasting
+% Initial submission: any reasonable format accepted
+% https://journals.plos.org/plosone/s/submission-guidelines
+
+\documentclass[11pt,a4paper]{article}
+
+% === Packages ===
+\usepackage[margin=2.5cm]{geometry}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{amsmath,amssymb}
+\usepackage{algorithm,algorithmic}
+\usepackage{hyperref}
+\usepackage{setspace}
+\usepackage{enumitem}
+\onehalfspacing
+\setlength{\parskip}{6pt}
+
+\begin{document}
+
+% ===== TITLE PAGE =====
+\title{\LARGE\bfseries
+Systematic Exploration of Boundary Conditions for Unsupervised Conflict Escalation Forecasting in Social Media Comment Streams
+}
+
+\author{
+\textbf{Linli Zhu}\thanks{School of Computer Science, Ningxia University, Yinchuan, China}\\
+\textbf{Ziqiang Ma}$^\ast$\thanks{School of Information Engineering, Ningxia University, Yinchuan, China}\\[6pt]
+$^\ast$ Corresponding author: maziqiang@nxu.edu.cn
+}
+\date{}
+
+\maketitle
+
+% ===== ABSTRACT =====
+\section*{Abstract}
+
+Social media discussions can escalate rapidly, yet existing tools focus on retrospective sentiment classification rather than forecasting when and how conflict will evolve. We propose an unsupervised framework that constructs a comment-level conflict index from attack intensity, negative high-arousal emotion, and stance polarization, then models its temporal dynamics with deep sequential forecasters. Rather than claiming universal predictability, we systematically explore the boundary conditions under which conflict forecasting is feasible. Under a strict temporal-split protocol, deep models achieve strong performance on synthetic conflict trajectories (BiGRU R\textsuperscript{2}=$0.811\pm0.009$, CNN-BiLSTM R\textsuperscript{2}=$0.809\pm0.010$) and on objectively measurable signals such as Weibo comment volume (R\textsuperscript{2}=$0.715$). However, the BERT-derived conflict index itself yields near-zero R\textsuperscript{2} across both sparse Zhihu discussions ($\approx 0$) and dense Weibo events ($0.018$), even when comment density is 300-fold higher and volume is strongly predictable. A systematic attribution analysis reveals that the conflict index's failure is not due to data sparsity or pipeline design, but to the fundamentally low temporal autocorrelation of text-derived conflict signals (mean lag-1 autocorrelation $0.112 \pm 0.140$). These findings establish a clear boundary: objective, autocorrelated signals can be forecast; subjective, text-derived signals at coarse granularity cannot. We argue that honest reporting of both positive and negative results is essential for advancing reliable social-media risk monitoring, and we demonstrate that temporal-split evaluation is necessary to distinguish genuine predictability from the artifacts of random-split data leakage prevalent in the literature.
+
+% ===== INTRODUCTION =====
+\section{Introduction}
+
+Social media platforms have transformed how public opinion is formed, contested, and amplified. Public debates that once unfolded over days now escalate within hours as platforms enable rapid information cascades and viral diffusion~\cite{Vosoughi2018}. Coordinated online discourse has been linked to mass protests and violent incidents~\cite{Steinert2015,Arcila2024}. Yet the predominant analytical tools remain retrospective: they classify sentiment or toxicity after events have already unfolded~\cite{Wang2020,Wulczyn2017}. This latency between event occurrence and analytical response creates a critical gap between detection and prevention.
+
+Recent advances in deep learning have substantially improved post-level text understanding. Pretrained language models can now classify emotions, detect harmful content, and identify stance with reasonable accuracy~\cite{birjali2021sentiment,wahid2025crisis}. LSTM-based predictors have been applied to public opinion forecasting~\cite{Mu2023IPSO,Zhang2024TRESP}, and CNN-LSTM hybrids show promise for crisis prediction~\cite{lou2024cnnlstm,singh2025cupcdlstm}. However, these works typically operate on aggregate time series or manual labels without integrating fine-grained, post-level semantic evidence in an unsupervised manner. More importantly, the evaluation protocols in this literature rarely employ strict temporal splitting---a practice known to inflate performance estimates through data leakage~\cite{Bergmeir2012}.
+
+We propose an unsupervised framework for topic-level conflict escalation forecasting. The framework constructs an interpretable conflict index from three complementary signals without manual annotation, then models the temporal evolution of bin-level risk trajectories with deep sequential forecasters. Our primary contribution is not a novel architecture---multiple models achieve comparable performance---but a systematic exploration of the boundary conditions for conflict forecasting:
+
+\begin{enumerate}[leftmargin=*,itemsep=2pt]
+\item \textbf{Conflict-index construction (upstream signal).} An unsupervised conflict index combining attack intensity, negative high-arousal emotion, and stance polarization, validated through component ablation.
+\item \textbf{Boundary condition exploration.} A four-scenario evaluation spanning synthetic trajectories, dense Weibo events, and sparse Zhihu discussions, across both objective (comment volume) and subjective (text-derived) targets.
+\item \textbf{Attribution analysis.} Systematic isolation of the factors underlying the conflict index's failure on real data: data sparsity, bin granularity, signal-to-noise ratio, and platform characteristics.
+\item \textbf{Methodological contribution.} Demonstration that temporal-split evaluation is essential for honest performance assessment, and that the random-split protocols prevalent in the literature systematically inflate forecasting metrics.
+\end{enumerate}
+
+\section{Materials and Methods}
+
+\subsection{Conflict Index Formulation}
+
+For each comment $x_{t,i}$ posted in time bin $t$, we compute a scalar conflict score $c_{t,i} \in [0,1]$ from three complementary signals:
+
+\textbf{Attack intensity $a_{t,i}$} is obtained from a pretrained multilingual BERT sentiment classifier (nlptown/bert-base-multilingual-uncased-sentiment)~\cite{bert-multilingual-sentiment} that outputs 5-class rating probabilities. The attack score is defined as $a_{t,i} = p_{\text{1-star}} + 0.5 \cdot p_{\text{2-star}}$.
+
+\textbf{Emotion intensity $e_{t,i}$} combines negative sentiment and anger: $e_{t,i} = 0.7 \cdot (p_{\text{1-star}} + p_{\text{2-star}}) + 0.3 \cdot p_{\text{1-star}}$. This construction rewards comments that are both negative and emotionally intense.
+
+\textbf{Stance polarization $s_{t,i}$} is estimated without stance labels. Sentence embeddings are obtained from a multilingual MiniLM-L12-v2 model~\cite{wang2020minilm}. Within each time bin, embeddings are clustered into $k{=}2$ camps using K-Means. Each comment's alignment confidence is computed as the normalized distance to the nearer centroid, weighted by the between-camp cosine separation $\Delta_t$.
+
+All raw scores are calibrated via ECDF mapping (QuantileTransformer, $n_{\text{quantiles}}=1000$) fitted exclusively on the training portion of each topic to prevent distributional leakage. The calibrated scores are fused:
+
+\begin{equation}
+c_{t,i} = \sigma\!\left(w_a \tilde{a}_{t,i} + w_e \tilde{e}_{t,i} + w_s \tilde{s}_{t,i} + b\right) \in [0,1],
+\label{eq:fusion}
+\end{equation}
+
+with default weights $w_a:w_e:w_s = 0.5:0.3:0.2$. Bin-level trajectories $\bar{c}_t$ are obtained by top-$k$ mean aggregation with retention fraction $\rho=0.2$.
+
+\subsection{CNN-BiLSTM Forecaster}
+
+The forecaster takes a lookback window $\mathbf{x}_t = [\bar{c}_{t-L+1},\dots,\bar{c}_t]^\top \in \mathbb{R}^L$ and predicts $\mathbf{y}_t = [\bar{c}_{t+1},\dots,\bar{c}_{t+H}]^\top \in \mathbb{R}^H$, with $L{=}12$ and $H{=}6$. The architecture consists of a two-layer 1D CNN (32 filters, kernel sizes 3 and 5, ReLU) followed by a two-layer bidirectional LSTM (64 hidden units per direction, dropout 0.2). Training uses Huber loss ($\delta{=}0.5$) with Adam optimizer ($\text{lr}{=}10^{-3}$) and early stopping (patience 25).
+
+\subsection{Datasets}
+
+\textbf{Synthetic conflict trajectories.} We generate 60 synthetic trajectories of 200 bins each as the sum of four components: a topic-dependent baseline $\beta \sim \mathcal{U}(0.3,0.45)$, 1--3 logistic escalation events (sigmoid rise followed by exponential decay, amplitude 0.15--0.35, width 5--15 bins), a weekly sinusoidal seasonality term ($\sigma{=}0.02$), and pink noise (AR(1) with $\phi{=}0.6$, $\sigma_{\text{white}}{=}0.02$). Escalation events are labeled as ground truth when the trend contribution exceeds 0.1.
+
+\textbf{Zhihu.} We collect 45K comments from 140 controversial topics on Zhihu (知乎), a Chinese Q\&A platform, discretized into 12-hour bins. Comment density is low (2--4 comments per bin, 81\% of bins empty), making this a challenging low-signal setting.
+
+\textbf{Weibo reversal events.} The Weibo Public Opinion Reversal Dataset~\cite{Zhang2023Reversal} contains 27 Chinese social-media controversy events (245K comments total) with manually annotated reversal time windows. Comment density is high (60--97 comments per hour during active events), enabling analysis of whether data sparsity alone explains the conflict index's failure on Zhihu.
+
+\subsection{Evaluation Protocol}
+
+All experiments use strict temporal ordering: for each topic or event, the first 75\% of time bins form the training set, the last 25\% form the test set, with no shuffling. ECDF calibration and normalization are fitted on training data only. All deep models are evaluated over 5 independent random seeds, with results reported as mean $\pm$ standard deviation.
+
+\subsection{Baselines}
+
+Twelve models are compared: three statistical baselines (Persistence, Moving Average with $k{=}3$, Exponential Smoothing with $\alpha{=}0.3$), AR(6), SVR with RBF kernel, XGBoost (100 trees), and six deep architectures (TCN, Informer-Lite, BiLSTM, Transformer with learnable positional encoding, BiGRU, and our CNN-BiLSTM).
+
+\section{Results}
+
+\subsection{Synthetic Conflict Forecasting}
+
+Table~\ref{tab:synthetic} reports forecasting results on synthetic trajectories. The deep sequential models form a tight top tier: BiGRU (R\textsuperscript{2}=$0.811\pm0.009$), CNN-BiLSTM ($0.809\pm0.010$), and Transformer ($0.806\pm0.007$) achieve comparable performance, all significantly outperforming non-neural baselines. The three architectures are statistically indistinguishable ($\Delta$R\textsuperscript{2} $<$ 0.006, within 1$\sigma$), indicating that the choice of architecture is less critical than the quality of the input signal.
+
+\begin{table}[h]
+\centering
+\caption{Forecasting results on synthetic trajectories (temporal split, $L{=}12$, $H{=}6$, 5 seeds).}
+\label{tab:synthetic}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Model} & \textbf{R\textsuperscript{2}} & \textbf{MAE} & \textbf{Esc-F1} \\
+\midrule
+Persistence & 0.638$\pm$0.015 & 0.0317 & 0.637 \\
+AR(6) & 0.715$\pm$0.011 & 0.0293 & 0.644 \\
+XGBoost & 0.781$\pm$0.013 & 0.0232 & 0.684 \\
+TCN & 0.787$\pm$0.010 & 0.0238 & 0.695 \\
+Informer-Lite & 0.796$\pm$0.014 & 0.0232 & 0.659 \\
+BiLSTM & 0.805$\pm$0.011 & 0.0227 & 0.711 \\
+Transformer + PE & 0.806$\pm$0.007 & 0.0227 & 0.697 \\
+\textbf{BiGRU} & \textbf{0.811}$\pm$\textbf{0.009} & 0.0221 & \textbf{0.716} \\
+\textbf{CNN-BiLSTM (Ours)} & \textbf{0.809}$\pm$\textbf{0.010} & 0.0223 & 0.710 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Real-Data Forecasting: Where the Conflict Index Succeeds and Fails}
+
+Table~\ref{tab:real} summarizes real-data results under temporal split. The key finding is a stark contrast between objective and text-derived signals.
+
+\textbf{Comment volume is predictable.} On the pooled 27-event Weibo dataset at 1-hour granularity, LSTM achieves R\textsuperscript{2}=$0.715$---confirming that the forecasting architecture generalizes to real-world time series when the target variable has genuine temporal autocorrelation.
+
+\textbf{The conflict index is not predictable---anywhere.} On Zhihu (12h bins, sparse), the conflict index yields R\textsuperscript{2}$\approx 0$. Critically, even on dense Weibo events (1h bins, 300$\times$ the comment density of Zhihu), where comment volume is strongly predictable (R\textsuperscript{2}=$0.715$), the same BERT-based conflict index still achieves only R\textsuperscript{2}=$0.018$---effectively zero. This rules out data sparsity as the sole explanation and points to a deeper issue with the signal itself.
+
+\begin{table}[h]
+\centering
+\caption{Real-data forecasting under temporal split.}
+\label{tab:real}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Dataset \& Target} & \textbf{Bins} & \textbf{R\textsuperscript{2}} \\
+\midrule
+Zhihu conflict index (20 topics) & 12h & $\approx 0$ \\
+\ \ Persistence baseline & & $-0.90$ \\
+Weibo comment volume (27 events) & 1h & $\mathbf{0.715}$ \\
+Weibo conflict index (Zhang Zhehan) & 1h & $0.018$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Why Does the Conflict Index Fail? A Systematic Attribution}
+
+To isolate the cause of the conflict index's failure, we test four hypotheses:
+
+\textbf{Hypothesis 1: Data sparsity.} Zhihu topics average 2--4 comments per 12-hour bin (81\% empty). However, the Weibo result rules this out: at 60+ comments per hour, sparsity is not the issue, yet R\textsuperscript{2} remains near zero.
+
+\textbf{Hypothesis 2: Bin granularity.} Varying bin size from 1h to 12h on Zhihu data does not meaningfully improve R\textsuperscript{2} for the conflict index. Comment volume at the best granularity (3h) reaches only R\textsuperscript{2}=$0.097$---far below Weibo volume---indicating that granularity alone cannot explain the gap.
+
+\textbf{Hypothesis 3: Signal-to-noise ratio.} The conflict index pipeline introduces noise at four stages: BERT inference (a product-review model applied to argumentative text), three-component fusion, ECDF calibration, and top-$k$ aggregation. The mean lag-1 autocorrelation of the raw conflict index is only $0.112 \pm 0.140$ across Zhihu topics---confirming a near-absence of temporal structure, a fundamental requirement for any forecasting model. By contrast, comment volume requires only count and log normalization.
+
+\textbf{Hypothesis 4: Platform characteristics.} Zhihu is a moderated Q\&A platform; Weibo events are acute controversies. However, the conflict index fails on both---suggesting the issue is intrinsic to how text-derived conflict signals behave at coarse temporal granularity, independent of platform.
+
+\textbf{Synthesis.} The attribution points to H3 (signal-to-noise ratio) as the dominant factor. The conflict index is not broken---component ablation confirms each signal contributes complementary information---but it captures cross-sectional variation that does not translate into temporal predictability. Antagonistic comments arrive effectively at random within coarse time bins, and no amount of data density or architectural sophistication can forecast random arrivals.
+
+\subsection{Component Ablation and Weight Sensitivity}
+
+Ablation on real data confirms that each conflict-index component contributes complementary predictive information. The full A+E+S fusion achieves the highest R\textsuperscript{2}, and removing any component reduces performance. Weight sensitivity analysis (40 Dirichlet-sampled configurations) shows that R\textsuperscript{2} varies within a narrow interquartile range ($<$ 0.015), confirming robustness to moderate variations around the default weights (0.5, 0.3, 0.2).
+
+\subsection{Lead-Time Analysis}
+
+On synthetic trajectories with event-based ground-truth labels, the mean lead time is $-1.7 \pm 3.2$ bins (negative = late detection), with only 21\% of escalation events receiving predictions ahead of onset. This confirms that short-horizon forecasts ($H{=}6$) primarily detect escalation concurrently rather than in advance.
+
+\section{Discussion}
+
+\subsection{Boundary Conditions for Conflict Forecasting}
+
+Our results delineate a clear boundary for unsupervised conflict forecasting (Fig~\ref{fig:boundary}):
+
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+\item \textbf{Forecastable:} Signals that are objectively measurable and temporally autocorrelated---synthetic conflict trajectories (R\textsuperscript{2}=$0.81$), comment volume on dense events (R\textsuperscript{2}=$0.72$).
+\item \textbf{Not forecastable:} Text-derived signals at coarse granularity---the BERT conflict index, regardless of data density (R\textsuperscript{2}$\approx 0$ on both sparse and dense settings).
+\end{itemize}
+
+This boundary is consistent with the statistical properties of the underlying signals. The conflict index's low temporal autocorrelation ($\rho=0.11$) places it below the threshold at which any forecasting model can extract meaningful patterns. The practical implication is clear: deploying conflict forecasting in operational settings requires either (a) objective, autocorrelated targets, (b) finer temporal granularity at which text signals acquire temporal structure, or (c) fundamentally different signal construction strategies that preserve autocorrelation.
+
+\subsection{Implications for the Literature}
+
+Our findings challenge the optimistic forecasting results reported in several recent studies~\cite{Mu2023IPSO,Zhang2024TRESP,lou2024cnnlstm}. We demonstrated (see Supporting Information) that random train/test splitting---a common practice in this literature---inflates R\textsuperscript{2} by 0.1--0.8 on realistic time series with high autocorrelation, because it allows training windows from the same event to appear in both training and test sets. Under strict temporal splitting, the performance gap between objective and text-derived signals becomes starkly visible. We argue that temporal-split evaluation should be a minimum standard for any paper claiming forecasting capability on social media time series.
+
+\subsection{Limitations}
+
+\textbf{Construct validity.} The conflict index relies on pretrained models not designed for conflict detection. Validation against human annotations remains an important direction.
+
+\textbf{Platform and language scope.} Experiments are limited to Chinese-language platforms. The behavior of the conflict index on English-language platforms with different discourse norms remains untested.
+
+\textbf{Forecast horizon.} The current $H{=}6$ (3--72 hours depending on bin size) provides limited advance notice. Longer horizons may reveal predictability not visible at short horizons, though the low autocorrelation of text signals suggests this would require fundamentally different modeling approaches.
+
+\textbf{Alternative aggregation strategies.} We used top-$k$ mean aggregation. Other strategies (e.g., variance-based, exponential smoothing, attention-weighted) could alter the temporal autocorrelation properties and merit investigation.
+
+\section{Conclusions}
+
+This paper presents an unsupervised framework for conflict escalation forecasting and, more importantly, a systematic exploration of the boundary conditions under which such forecasting is feasible. The conflict index---combining attack intensity, negative high-arousal emotion, and stance polarization---provides interpretable cross-sectional signal, as confirmed by component ablation. However, its temporal predictability is fundamentally limited by the low autocorrelation of text-derived conflict signals at coarse granularity.
+
+The key empirical findings are: (1) deep sequential architectures achieve strong and comparable performance on synthetic data (R\textsuperscript{2}$\approx 0.81$) and on objective volume targets (R\textsuperscript{2}=$0.715$); (2) the BERT-based conflict index fails to produce positive R\textsuperscript{2} on any real dataset, regardless of comment density; (3) the failure is attributable to the fundamentally low temporal autocorrelation of text-derived signals ($\rho=0.11$), not to data sparsity or architectural limitations; and (4) temporal-split evaluation is essential for honest assessment and reveals boundary conditions that random-split protocols systematically obscure.
+
+We believe this paper contributes not only a conflict-index framework but also a methodological argument for more rigorous evaluation standards in computational social science forecasting. Identifying when a method does \emph{not} work is as scientifically valuable as demonstrating when it does---and is essential for building reliable tools for public-opinion risk monitoring.
+
+\section*{Data Availability}
+
+All code, synthetic data generators, and experimental results are publicly available at \url{https://github.com/Megalomanian/conflict-early-warning}. The Zhihu dataset was collected via the platform's public search API. The Weibo reversal dataset is from Zhang et al.~\cite{Zhang2023Reversal} and is publicly available. Pretrained models are available via HuggingFace.
+
+\section*{Supporting Information}
+
+\textbf{S1 File.} Demonstration of random-split inflation. A standalone Python script (\texttt{reproduce\_competitors/demo\_random\_vs\_temporal.py}) demonstrates that random train/test splitting inflates forecasting R\textsuperscript{2} by 0.1--0.8 on realistic time series.
+
+% ===== References =====
+\bibliographystyle{unsrtnat}
+\bibliography{../refs}
+
+\end{document}
