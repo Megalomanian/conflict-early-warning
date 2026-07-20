@@ -1,4 +1,4 @@
-# Weakly Supervised Early Warning of Conflict Escalation in Social Media Comment Streams
+# Unsupervised Risk Forecasting of Conflict Escalation in Social Media Comment Streams
 
 [![Paper](https://img.shields.io/badge/Paper-PDF-blue)](./main.pdf)
 [![Slides](https://img.shields.io/badge/Slides-HTML-orange)](./slides.html)
@@ -11,90 +11,81 @@
 
 ## Overview
 
-A weakly supervised LSTM-based framework for early warning of conflict escalation in social media comment streams. The framework combines **attack intensity**, **negative high-arousal emotion**, and **stance polarization** into a conflict index, then uses a **CNN-BiLSTM** hybrid forecaster for short-horizon temporal prediction.
+An **unsupervised** framework for risk forecasting of conflict escalation in social media comment streams. The framework combines **attack intensity**, **negative high-arousal emotion**, and **stance polarization** into a conflict index without manual annotation, then uses deep sequential forecasters for short-horizon temporal prediction.
 
-### Key Results
+### Key Results (V2 — strict temporal split, 5 seeds)
 
 | Metric | Value |
 |--------|-------|
-| Synthetic R² | **0.833** |
-| Synthetic Esc-F1 | **0.710** |
-| Real Zhihu Volume R² | **0.831** |
-| Case Study (Huolala) Esc-F1 | **0.889** |
-| Best Trigger F1 (Threshold) | **0.688** @ 2.9% alert rate |
-| Lead Time | **+0.3 ± 1.6 bins** |
+| CNN-BiLSTM R² | **0.812 ± 0.008** |
+| BiGRU R² | **0.811 ± 0.009** |
+| Transformer R² | **0.806 ± 0.007** |
+| Best Esc-F1 (CNN-BiLSTM) | **0.718** |
+| Lead Time (mean ± std) | **-1.7 ± 3.2 bins** |
+| Early Warning Rate (lead>0) | **21%** |
 
 ### Architecture
 
 ```
-Raw Comments → Conflict Index → Bin-Level Trajectory → CNN-BiLSTM → Early Warning
-                  (3 signals)      (top-k aggregation)   (L=12, H=6)   (5 trigger rules)
+Raw Comments → Conflict Index → Bin-Level Trajectory → CNN-BiLSTM → Risk Monitoring
+            (3 signals, unsupervised)   (top-k aggregation)   (L=12, H=6)   (5 trigger rules)
 ```
 
 ## Repository Structure
 
 ```
-├── main.tex                  # English paper (IEEEtran journal)
-├── main_cn.tex               # Chinese version (partial)
-├── refs.bib                  # Bibliography (26 entries)
-├── slides.html               # Presentation slides (reveal.js)
-├── compile.sh                # Build script
+├── main.tex / main_cn.tex    # English & Chinese paper (IEEEtran)
+├── refs.bib                  # Bibliography (29 entries)
+├── slides.html               # reveal.js presentation
+├── compile.sh                # Build: ./compile.sh [en|cn|clean]
+├── AGENTS.md                 # Contributor guide
 │
-├── experiment_real_model.py  # Main experiment: BERT conflict index + CNN-BiLSTM
-├── run_experiments.py        # Full pipeline: synthetic data + all baselines
-├── experiment_extended.py    # Extended model comparison
-├── experiment.py             # Keyword-based conflict index (original)
-├── case_study.py             # Weibo reversal event case study
-├── run_contributions.py      # C1/C2/C3 contribution validation
-├── c3_leadtime.py            # Lead time analysis
-├── fix_figure.py             # Figure generation with CJK fonts
+├── run_experiments_v2.py           # **Primary**: synthetic + full baselines (temporal split, 5 seeds)
+├── experiment_real_model_v2.py     # **Primary**: BERT conflict index + CNN-BiLSTM on Zhihu data
+├── case_study.py                   # Weibo reversal event case study (V2 fixed)
+│
+├── run_experiments.py / experiment_real_model.py  # Deprecated (random-split leakage)
+├── run_contributions.py / c3_leadtime.py          # Deprecated
+├── experiment.py / experiment_extended.py         # Deprecated
 │
 ├── figures/                  # Paper figures (8 PDFs)
-├── experiment_results/       # Experiment outputs (.pkl files)
-├── reading_list/             # Curated literature with summaries
+├── experiment_results/       # Output .pkl files from experiments
+├── reading_list/             # Curated literature + summaries
+├── zhihu_topics/             # Zhihu dataset (140 topics) + weibo_reversal/ sub-dataset
 │
-├── zhihu_topics/             # Real-world Zhihu dataset (140 topics)
-│   └── weibo_reversal/       # Weibo public opinion reversal dataset
-│
-└── .vscode/                  # VS Code LaTeX Workshop config
+├── pyproject.toml            # Python deps (uv-managed)
+├── .vscode/settings.json     # LaTeX Workshop auto-build on save (Tectonic)
+└── .latexmkrc                # Alternative XeLaTeX+BibTeX config
 ```
+
+**⚠️ `run_experiments_v2.py` and `experiment_real_model_v2.py` are the authoritative scripts.** Older scripts without `_v2` use random-split data leakage and are deprecated.
 
 ## Build & Run
 
 ### Paper
 
 ```bash
-# English version
-./compile.sh en
-
-# Chinese version
-./compile.sh cn
-
-# Clean auxiliary files
-./compile.sh clean
+./compile.sh en          # English → main.pdf (Tectonic, auto BibTeX)
+./compile.sh cn          # Chinese → main_cn.pdf
+./compile.sh clean       # Remove auxiliary files
 ```
 
-Uses **Tectonic** (Rust-based LaTeX engine) with automatic BibTeX and package fetching.
+Requires **Tectonic** at `~/.local/bin/tectonic`.
 
 ### Experiments
 
 ```bash
-# Install dependencies
-uv sync
-
-# Run with GPU (recommended)
-uv run python3 run_experiments.py
-
-# Run without GPU
-python3 run_experiments.py
+uv sync                                          # Install dependencies
+uv run python3 run_experiments_v2.py             # Primary experiment (GPU recommended, ~90 min)
+uv run python3 experiment_real_model_v2.py       # Real-data experiment (GPU required)
+uv run python3 case_study.py                     # Case study
 ```
 
-**Requirements**: Python 3.10+, PyTorch 2.5+, Transformers, Sentence-Transformers, XGBoost, scikit-learn.
+**Requirements**: Python 3.13+, PyTorch 2.13+, Transformers, Sentence-Transformers, XGBoost, scikit-learn, statsmodels.
 
 ### Presentation
 
-Open `slides.html` in any browser — powered by [reveal.js](https://revealjs.com/) (MIT license).  
-Press `F` for fullscreen, `Esc` for overview, `?` for shortcuts.
+Open `slides.html` in any browser — powered by [reveal.js](https://revealjs.com/). Press `F` for fullscreen, `?` for shortcuts.
 
 ## Datasets
 
@@ -102,28 +93,30 @@ Press `F` for fullscreen, `Esc` for overview, `?` for shortcuts.
 |---------|-------------|------|
 | **Zhihu** (知乎) | Chinese Q&A platform comment streams | 140 topics, 45K comments |
 | **Synthetic** | Logistic escalation events + seasonality + pink noise | 60 trajectories × 200 bins |
-| **Weibo Reversal** | Public opinion reversal events with annotated windows | 27 events, 245K comments |
+| **Weibo Reversal** | Public opinion reversal events (Zhang et al. 2023) | 27 events, 245K comments |
 
-The Weibo dataset is from Zhang et al. (2023), *Information Studies: Theory & Application*.
+## Baselines & Results (V2)
 
-## Baselines
+| Model | Type | R² (mean ± std) | Esc-F1 |
+|-------|------|-----------------|--------|
+| Persistence | Statistical | 0.638 ± 0.015 | 0.637 |
+| AR(6) | Statistical | 0.715 ± 0.011 | 0.644 |
+| SVR (RBF) | ML | 0.759 ± 0.024 | 0.667 |
+| XGBoost | ML | 0.781 ± 0.013 | 0.684 |
+| TCN | Deep | 0.787 ± 0.010 | 0.695 |
+| Informer-Lite | Deep | 0.796 ± 0.012 | 0.662 |
+| BiLSTM | Deep | 0.805 ± 0.011 | 0.711 |
+| Transformer + PE | Deep | 0.806 ± 0.007 | 0.697 |
+| BiGRU | Deep | 0.811 ± 0.009 | 0.716 |
+| **CNN-BiLSTM** | **Ours** | **0.812 ± 0.008** | **0.718** |
 
-| Model | Type | R² | Esc-F1 |
-|-------|------|-----|--------|
-| Persistence | Statistical | 0.640 | 0.638 |
-| AR(6) | Statistical | 0.712 | 0.628 |
-| SVR (RBF) | ML | 0.784 | 0.663 |
-| XGBoost | ML | 0.793 | 0.679 |
-| BiGRU | Deep | 0.829 | 0.698 |
-| TCN | Deep | 0.819 | 0.651 |
-| Transformer | Deep | 0.532 | 0.138 |
-| **CNN-BiLSTM** | **Ours** | **0.833** | **0.710** |
+Results under strict temporal ordering (no shuffling), ECDF fitted on training data only, 5 random seeds.
 
 ## Citation
 
 ```bibtex
 @article{zhu2025conflict,
-  title={Weakly Supervised Early Warning of Conflict Escalation in Social Media Comment Streams},
+  title={Unsupervised Risk Forecasting of Conflict Escalation in Social Media Comment Streams},
   author={Zhu, Linli and Ma, Ziqiang},
   journal={IEEE Transactions on Computational Social Systems},
   year={2025},
