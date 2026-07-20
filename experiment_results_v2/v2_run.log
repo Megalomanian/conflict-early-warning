@@ -1,0 +1,82 @@
+Device: cuda | L=12 H=6 | 60 topics × 200 bins
+TEMPORAL split (75% train / 25% test)
+Multi-seed: 5 runs for statistical significance
+
+
+Running with 5 seeds for statistical significance...
+
+--- Seed 42 (1/5) ---
+  Train windows: 8235, Test windows: 2745
+  Escalation prevalence: train=18.6%, test=18.4%
+    BiLSTM               R²=0.8108 MAE=0.0219 Esc-F1=0.731
+    BiGRU                R²=0.8038 MAE=0.0216 Esc-F1=0.753
+    TCN                  R²=0.7889 MAE=0.0231 Esc-F1=0.715
+    Transformer          R²=0.8053 MAE=0.0222 Esc-F1=0.672
+    Informer-Lite        R²=0.7842 MAE=0.0251 Esc-F1=0.667
+    CNN-BiLSTM           R²=0.8151 MAE=0.0215 Esc-F1=0.739
+
+--- Seed 59 (2/5) ---
+  Train windows: 8235, Test windows: 2745
+  Escalation prevalence: train=17.7%, test=20.9%
+    BiLSTM               R²=0.8206 MAE=0.0226 Esc-F1=0.770
+    BiGRU                R²=0.8217 MAE=0.0226 Esc-F1=0.781
+    TCN                  R²=0.8015 MAE=0.0239 Esc-F1=0.756
+    Transformer          R²=0.8153 MAE=0.0236 Esc-F1=0.767
+    Informer-Lite        R²=0.8135 MAE=0.0218 Esc-F1=0.774
+    CNN-BiLSTM           R²=0.8242 MAE=0.0210 Esc-F1=0.780
+
+--- Seed 76 (3/5) ---
+  Train windows: 8235, Test windows: 2745
+  Escalation prevalence: train=19.8%, test=18.2%
+    BiLSTM               R²=0.8088 MAE=0.0204 Esc-F1=0.714
+    BiGRU                R²=0.8204 MAE=0.0195 Esc-F1=0.697
+    TCN                  R²=0.7935 MAE=0.0216 Esc-F1=0.699
+    Transformer          R²=0.8131 MAE=0.0199 Esc-F1=0.731
+    Informer-Lite        R²=0.8023 MAE=0.0202 Esc-F1=0.615
+    CNN-BiLSTM           R²=0.8130 MAE=0.0207 Esc-F1=0.724
+
+--- Seed 93 (4/5) ---
+  Train windows: 8235, Test windows: 2745
+  Escalation prevalence: train=22.6%, test=19.6%
+    BiLSTM               R²=0.7914 MAE=0.0227 Esc-F1=0.653
+    BiGRU                R²=0.8060 MAE=0.0206 Esc-F1=0.649
+    TCN                  R²=0.7730 MAE=0.0237 Esc-F1=0.627
+    Transformer          R²=0.7997 MAE=0.0220 Esc-F1=0.615
+    Informer-Lite        R²=0.7961 MAE=0.0217 Esc-F1=0.644
+    CNN-BiLSTM           R²=0.7993 MAE=0.0221 Esc-F1=0.653
+
+--- Seed 110 (5/5) ---
+  Train windows: 8235, Test windows: 2745
+  Escalation prevalence: train=20.6%, test=22.4%
+    BiLSTM               R²=0.7927 MAE=0.0261 Esc-F1=0.685
+    BiGRU                R²=0.8004 MAE=0.0263 Esc-F1=0.703
+    TCN                  R²=0.7785 MAE=0.0270 Esc-F1=0.675
+    Transformer          R²=0.7965 MAE=0.0258 Esc-F1=0.698
+    Informer-Lite        R²=0.7826 MAE=0.0267 Esc-F1=0.608
+    CNN-BiLSTM           R²=0.8087 MAE=0.0245 Esc-F1=0.695
+
+════════════════════════════════════════════════════════════════════════════════
+Model                          R²        MAE       RMSE     Esc-F1
+────────────────────────────────────────────────────────────────────────────────
+CNN-BiLSTM             0.8121±0.0081     0.0220     0.0395     0.7182
+BiGRU                  0.8105±0.0089     0.0221     0.0397     0.7163
+Transformer            0.8060±0.0073     0.0227     0.0402     0.6966
+BiLSTM                 0.8048±0.0112     0.0227     0.0403     0.7107
+Informer-Lite          0.7958±0.0115     0.0231     0.0412     0.6616
+TCN                    0.7871±0.0102     0.0238     0.0421     0.6945
+XGBoost                0.7805±0.0132     0.0232     0.0427     0.6838
+SVR                    0.7593±0.0240     0.0222     0.0448     0.6666
+AR(6)                  0.7147±0.0106     0.0293     0.0486     0.6444
+Persistence            0.6377±0.0154     0.0317     0.0548     0.6371
+Moving Avg             0.5396±0.0198     0.0370     0.0617     0.5468
+Exp Smooth             0.4981±0.0223     0.0379     0.0645     0.4299
+════════════════════════════════════════════════════════════════════════════════
+
+--- Lead Time Analysis (Event-Based) ---
+  Mean lead time: -1.7 ± 3.2 bins (+ = early)
+  Early warning rate (lead>0): 35/164 = 21%
+  On-time (|lead|≤1): 89/164 = 54%
+
+--- Weight Sensitivity Analysis ---
+
+  Weight sensitivity analysis (40 samples)...
