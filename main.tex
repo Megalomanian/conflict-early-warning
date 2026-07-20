@@ -409,7 +409,9 @@ To assess real-world deployability, we evaluate the framework on two complementa
 
 \textbf{Weibo comment-volume forecasting (positive result).} To verify that the forecasting architecture itself is not the limiting factor, we apply the same LSTM forecaster to a structurally simpler but objectively measurable target: comment volume (log-transformed) on the 27-event Weibo public-opinion reversal dataset~\cite{Zhang2023Reversal} at 1-hour granularity. Unlike the conflict index---which introduces noise through BERT-based text analysis---comment volume is a direct, high-signal metric. Pooling all 27 events under temporal split yields an R\textsuperscript{2} of $0.715$, confirming that the LSTM architecture performs well on real-world time series when the target variable has genuine temporal autocorrelation. This result also validates our methodological pipeline (temporal split, per-event normalization, sliding-window construction) independently of the conflict-index computation.
 
-These two experiments establish a crucial boundary condition for our framework: conflict escalation can be forecast when commenting activity is dense and the target signal is objectively measurable, but not when the target is a text-derived index computed from sparse discussions. We return to the implications of this finding in Section~\ref{sec:discussion}.
+\textbf{Weibo conflict-index forecasting (negative result).} To test whether the conflict index's failure on Zhihu is attributable to data sparsity alone, we compute the same BERT-based conflict index on the densest Weibo event (Zhang Zhehan incident, 22K comments, 62 comments/hour) at 1-hour bins. Despite a 300-fold increase in comment density relative to Zhihu and strong volume predictability (R\textsuperscript{2}=$0.715$), the conflict index still yields R\textsuperscript{2}=$0.018$---effectively zero. This result rules out sparsity as the sole explanation. The conflict index fails not because there are too few comments, but because text-level attack, emotion, and stance signals lack the temporal autocorrelation needed for short-horizon forecasting, regardless of data density.
+
+These three experiments establish a crucial boundary condition for our framework: conflict escalation can be forecast when the target signal is objectively measurable and temporally autocorrelated (synthetic trajectories, comment volume), but not when it is a text-derived index---even in dense commenting environments. We return to the implications of this finding in Section~\ref{sec:discussion}.
 
 \begin{table}[t]
 \caption{Real-data forecasting results under temporal split. Conflict index: Zhihu topics at 12h bins; Comment volume: Weibo events at 1h bins.}\label{tab:real_results}
@@ -424,6 +426,7 @@ Zhihu conflict index (20 topics pooled) & 12h & $\approx 0.01$ \\
 Weibo comment volume (27 events pooled) & 1h & $\mathbf{0.715}$ \\
 \ \ Persistence baseline & & $0.55$ \\
 \ \ AR(6) baseline & & $0.62$ \\
+Weibo conflict index (Zhang Zhehan event) & 1h & $0.018$ \\
 \bottomrule
 \end{tabular}
 \vspace{4pt}
