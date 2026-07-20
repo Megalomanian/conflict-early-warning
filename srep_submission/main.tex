@@ -76,7 +76,7 @@ where $\sigma$ is the sigmoid function, and the weights are set to $w_a:w_e:w_s 
 
 All raw scores are calibrated via empirical cumulative distribution function (ECDF) mapping fitted exclusively on training data to prevent distributional leakage. Comment-level indices are aggregated to bin-level trajectories $\bar{c}_t$ using top-$k$ mean aggregation ($\rho=0.2$), which emphasizes the high-risk tail.
 
-We evaluate on three complementary datasets: (1) \textbf{Synthetic trajectories} (60 trajectories $\times$ 200 bins) with logistic escalation events, seasonality, and pink noise, providing known ground-truth escalation labels; (2) \textbf{Zhihu} (知乎), a Chinese Q\&A platform with 140 controversial topics and 45K comments; and (3) \textbf{Weibo reversal events}, three public-opinion reversal cases (27 events, 245K comments total) from Zhang et al.~\cite{Zhang2023Reversal}. All experiments use strict temporal ordering (first 75\% bins for training, last 25\% for testing) and report mean $\pm$ standard deviation over 5 independent seeds.
+We evaluate on three complementary datasets: (1) \textbf{Synthetic trajectories} (60 trajectories $\times$ 200 bins) with logistic escalation events, seasonality, and pink noise, providing known ground-truth escalation labels; (2) \textbf{Zhihu}, a Chinese Q\&A platform with 140 controversial topics and 45K comments; and (3) \textbf{Weibo reversal events}, three public-opinion reversal cases (27 events, 245K comments total) from Zhang et al.~\cite{Zhang2023Reversal}. All experiments use strict temporal ordering (first 75\% bins for training, last 25\% for testing) and report mean $\pm$ standard deviation over 5 independent seeds.
 
 \subsection{Forecasting Performance}
 
