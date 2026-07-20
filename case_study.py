@@ -115,29 +115,44 @@ if __name__ == "__main__":
     texts = df_all["text_content"].tolist()
     r = computer.compute_batch(texts)
 
-    qt = QuantileTransformer(n_quantiles=1000, output_distribution="uniform", random_state=42)
-    a_cal = qt.fit_transform(r["attack"].reshape(-1,1)).flatten()
-    e_cal = qt.fit_transform(r["emotion"].reshape(-1,1)).flatten()
-
+    # V2: Stance computed globally (needs per-topic clustering)
     s_raw = np.zeros(len(df_all))
     for evt_name in df_all["event_name"].unique():
         mask = df_all["event_name"] == evt_name
         idxs = np.where(mask.values)[0]
         if len(idxs) >= 4:
             s_raw[idxs] = computer.stance_polarization(r["embeddings"][idxs])
-    s_cal = qt.fit_transform(s_raw.reshape(-1,1)).flatten()
 
-    df_all["c"] = (1.0/(1.0+np.exp(-(0.5*a_cal+0.3*e_cal+0.2*s_cal)))).clip(0,1)
+    df_all["a_raw"] = r["attack"]
+    df_all["e_raw"] = r["emotion"]
+    df_all["s_raw"] = s_raw
     df_all["bin"] = df_all["dt"].dt.floor("2h")
 
-    print(f"  Attack μ={r['attack'].mean():.3f} Emotion μ={r['emotion'].mean():.3f} Conflict μ={df_all['c'].mean():.3f}")
+    print(f"  Attack μ={r['attack'].mean():.3f} Emotion μ={r['emotion'].mean():.3f}")
 
     # ── Per-event modeling ──
     results_per_event = {}
     for evt_name in df_all["event_name"].unique():
-        edf = df_all[df_all["event_name"] == evt_name].copy()
+        edf = df_all[df_all["event_name"] == evt_name].copy().sort_values("dt")
         fb, fe = edf["fbegin"].iloc[0], edf["fend"].iloc[0]
         edf["is_reversal"] = ((edf["dt"] >= fb) & (edf["dt"] <= fe)).astype(int)
+
+        # V2: ECDF calibration on TRAINING data only (first 75% temporal)
+        n_train_cal = int(len(edf) * 0.75)
+        qt_a = QuantileTransformer(n_quantiles=min(1000, n_train_cal),
+                                   output_distribution="uniform", random_state=42)
+        qt_e = QuantileTransformer(n_quantiles=min(1000, n_train_cal),
+                                   output_distribution="uniform", random_state=42)
+        qt_s = QuantileTransformer(n_quantiles=min(1000, n_train_cal),
+                                   output_distribution="uniform", random_state=42)
+        tr_idx = edf.index[:n_train_cal]
+        qt_a.fit(edf.loc[tr_idx, "a_raw"].values.reshape(-1, 1))
+        qt_e.fit(edf.loc[tr_idx, "e_raw"].values.reshape(-1, 1))
+        qt_s.fit(edf.loc[tr_idx, "s_raw"].values.reshape(-1, 1))
+        edf["a_cal"] = qt_a.transform(edf["a_raw"].values.reshape(-1, 1)).flatten()
+        edf["e_cal"] = qt_e.transform(edf["e_raw"].values.reshape(-1, 1)).flatten()
+        edf["s_cal"] = qt_s.transform(edf["s_raw"].values.reshape(-1, 1)).flatten()
+        edf["c"] = (1.0/(1.0+np.exp(-(0.5*edf["a_cal"]+0.3*edf["e_cal"]+0.2*edf["s_cal"])))).clip(0,1)
 
         agg = edf.groupby("bin").agg(
             c_bar=("c", lambda x: x.nlargest(max(1,int(len(x)*0.2))).mean()),
@@ -162,10 +177,10 @@ if __name__ == "__main__":
         esc_labels = np.array(es)
 
         n = len(X); n_tr = int(n*0.75)
-        perm = np.random.RandomState(42).permutation(n)
-        Xtr, ytr = X[perm[:n_tr]].to(DEV), y[perm[:n_tr]].to(DEV)
-        Xte, yte = X[perm[n_tr:]].to(DEV), y[perm[n_tr:]].to(DEV)
-        yte_np, esc_te = yte.cpu().numpy(), esc_labels[perm[n_tr:]]
+        # V2: TEMPORAL split (no random permutation)
+        Xtr, ytr = X[:n_tr].to(DEV), y[:n_tr].to(DEV)
+        Xte, yte = X[n_tr:].to(DEV), y[n_tr:].to(DEV)
+        yte_np, esc_te = yte.cpu().numpy(), esc_labels[n_tr:]
 
         # Train CNN-BiLSTM
         model = CNNBiLSTM().to(DEV); opt = torch.optim.Adam(model.parameters(), lr=1e-3)
