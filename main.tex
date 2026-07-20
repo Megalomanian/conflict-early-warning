@@ -118,7 +118,7 @@ where higher values indicate stronger antagonistic cues (e.g., high-arousal nega
 \bar{c}_t = \mathrm{Agg}\left(\{c_{t,i}\}_{i=1}^{n_t}\right) \in [0, 1].
 \end{equation}
 
-Our second objective is early warning through short-horizon forecasting. Given the historical binned sequence $\bar{c}_{1:t}$, we learn a temporal predictor $g_\phi$ to estimate the future risk trajectory $\mathbf{\hat{c}}$ over a horizon $H$:
+Our second objective is risk forecasting through short-horizon prediction. Given the historical binned sequence $\bar{c}_{1:t}$, we learn a temporal predictor $g_\phi$ to estimate the future risk trajectory $\mathbf{\hat{c}}$ over a horizon $H$:
 \begin{equation}
 \mathbf{\hat{c}}_{t+1:t+H} = g_\phi(\bar{c}_{1:t}).
 \end{equation}
@@ -445,7 +445,7 @@ To assess how conflict-index signal quality impacts downstream forecasting, we c
 
 \subsubsection{Fusion Weight Sensitivity Analysis}\label{sec:sensitivity}
 
-To assess whether forecasting performance is sensitive to the choice of fusion weights $(w_a, w_e, w_s)$, we conduct a random search over 40 weight configurations sampled from a Dirichlet distribution. The R\textsuperscript{2} across configurations varies within a narrow range, indicating that forecasting performance is robust to moderate weight variations around the default setting (0.5, 0.3, 0.2). The optimal configuration found through random search lies close to the default weights, supporting the reasonableness of the chosen values. Figure~\ref{fig:weight_sens} visualizes the R\textsuperscript{2} landscape over weight configurations.
+To assess whether forecasting performance is sensitive to the choice of fusion weights $(w_a, w_e, w_s)$, we conduct a random search over 40 weight configurations sampled from a Dirichlet distribution. The R\textsuperscript{2} across configurations varies within a narrow range, indicating that forecasting performance is robust to moderate weight variations around the default setting (0.5, 0.3, 0.2). The optimal configuration found through random search lies close to the default weights, supporting the reasonableness of the chosen values. The R\textsuperscript{2} across configurations varies within a narrow range (interquartile range $<$ 0.015), indicating robustness to moderate weight variations.
 
 \subsubsection{Risk-Monitoring Lead Time (RQ5)}
 
@@ -466,7 +466,7 @@ Beyond binary escalation detection, we measure \emph{lead time}: how many bins b
 \begin{figure}[ht]
 \centering
 \includegraphics[width=\columnwidth]{figures/fig_lead_time.pdf}
-\caption{Early warning lead time analysis. (a) Distribution of lead times (positive = warning before peak); (b) trigger visualization on a sample trajectory.}\label{fig:lead_time}
+\caption{Lead time analysis. (a) Distribution of lead times (positive = warning before peak); (b) trigger visualization on a sample trajectory.}\label{fig:lead_time}
 \end{figure}
 
 \begin{table}[t]
