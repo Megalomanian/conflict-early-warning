@@ -493,6 +493,12 @@ Very high noise ($\sigma{=}0.10$) & 0.0410 & 0.495 & $-$0.335 & 0.487 \\
 
 
 
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/fig_case_study.pdf}
+\caption{Conflict index trajectory for the Huolala incident. The shaded region indicates the annotated reversal window.}\label{fig:case_study}
+\end{figure}
+
 \subsection{Case Study: Real-World Public Opinion Reversal Events}
 
 To validate the framework on real-world conflict escalation data, we conduct a case study on the \textbf{Weibo Public Opinion Reversal Dataset}~\cite{Zhang2023Reversal} (27 events, 245K comments). The three densest events---Huolala passenger death (32K comments, 335h span), Zhang Zhehan incident (22K comments, 359h), and Gou Jing exam fraud (20K comments, 373h)---are selected for analysis at 1-hour bin granularity. The reversal window annotation provides ground-truth periods of elevated controversy. As reported in Table~\ref{tab:real_results}, comment volume on these dense events is strongly predictable (pooled R\textsuperscript{2}=0.715), while the text-derived conflict index yields near-zero R\textsuperscript{2}, consistent with the Zhihu findings. Figure~\ref{fig:case_study} visualizes the conflict index trajectory for the Huolala event, showing a modest but detectable upward shift ($\Delta c \approx +0.01$) during the reversal window---confirming that the conflict index captures genuine cross-sectional signal even when its temporal predictability is limited.
