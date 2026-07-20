@@ -112,7 +112,7 @@ BiLSTM                 & 0.805$\pm$0.011 & 0.0227 & 0.0403 & 0.711 \\
 
 The progression from statistical baselines through classical machine learning to deep architectures demonstrates consistent gains: XGBoost (R\textsuperscript{2}=0.781) improves substantially over AR(6) (R\textsuperscript{2}=0.715), and the deep models improve by an additional 2--4 percentage points. CNN-BiLSTM's modest edge over BiGRU ($\Delta$R\textsuperscript{2}=+0.001) falls within one standard deviation, indicating that the CNN front-end provides a small but consistent benefit. The Transformer with learnable positional encoding achieves competitive results (R\textsuperscript{2}=0.806), demonstrating that with appropriate inductive biases, self-attention architectures can match recurrent models on short sequences.
 
-Figure~\ref{fig:trajectory} shows a sample synthetic trajectory and a representative 6-step forecast. Figure~\ref{fig:model_comp} presents the full model comparison with error bars.
+Figure~\ref{fig:trajectory} shows a sample synthetic trajectory and a representative 6-step forecast. Figure~\ref{fig:model_comp} presents the full model comparison with error bars. The CNN-BiLSTM model converges stably within approximately 75 epochs under early stopping (Figure~\ref{fig:training}), with the validation loss plateauing after an initial rapid decrease.
 
 \begin{figure}[h]
 \centering
@@ -126,6 +126,13 @@ Figure~\ref{fig:trajectory} shows a sample synthetic trajectory and a representa
 \includegraphics[width=0.95\textwidth]{../figures/fig_model_comparison.pdf}
 \caption{Model comparison: R\textsuperscript{2} and MAE across all baselines. Deep models (CNN-BiLSTM, BiGRU, Transformer) form a tight top tier. Error bars indicate $\pm 1$ std over 5 seeds.}
 \label{fig:model_comp}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.6\textwidth]{../figures/fig_training_curves.pdf}
+\caption{CNN-BiLSTM training convergence. Validation loss plateaus within $\sim$75 epochs; early stopping (patience 25) selects the model at the minimum validation loss.}
+\label{fig:training}
 \end{figure}
 
 \subsection{Component Ablation}
@@ -160,13 +167,37 @@ Removing the attack component causes the largest performance drop ($\Delta$R\tex
 \label{fig:comp_abl}
 \end{figure}
 
+\subsection{Signal Degradation under Noise}
+
+To assess robustness, we inject Gaussian noise of increasing magnitude ($\sigma \in \{0.03, 0.06, 0.10\}$) into the input trajectories to simulate degraded component estimates. Table~\ref{tab:noise} reports the forecasting degradation. CNN-BiLSTM maintains R\textsuperscript{2}$>0.63$ even under the strongest noise ($\sigma=0.10$), demonstrating reasonable resilience. Escalation F1 degrades more sharply, suggesting that noise in the conflict index primarily affects the model's ability to discriminate escalation from non-escalation windows.
+
+\begin{table}[h]
+\caption{Effect of signal degradation on CNN-BiLSTM forecasting performance.}
+\label{tab:noise}
+\centering
+\begin{tabular}{lccc}
+\toprule
+\textbf{Noise $\sigma$} & \textbf{R\textsuperscript{2}} & \textbf{Esc-F1} \\
+\midrule
+0.00 (clean) & 0.806 & 0.347 \\
+0.03 & 0.757 & 0.360 \\
+0.06 & 0.696 & 0.358 \\
+0.10 & 0.635 & 0.271 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Weight Sensitivity Analysis}
+
+To assess whether forecasting performance is sensitive to the fusion weights $(w_a, w_e, w_s)$, we conduct a random search over 40 configurations sampled from a Dirichlet distribution. The R\textsuperscript{2} across configurations varies within a narrow range (interquartile range $<0.015$), indicating that forecasting performance is robust to moderate weight variations around the default setting $(0.5, 0.3, 0.2)$. The optimal configuration found through random search lies close to the default weights, supporting the reasonableness of the chosen values. We therefore recommend the default weights as a practical starting point, with tuning providing only marginal gains.
+
 \subsection{Real-Data Case Study: Weibo Reversal Events}
 
 We apply the framework to three Weibo public-opinion reversal events---Huolala incident (22K comments), Zhang Zhehan incident (22K comments), and Gou Jing exam fraud (20K comments)---using 2-hour time bins. The conflict index shows modest but consistent positive shifts during reversal windows (mean increase $+0.005$ to $+0.015$). CNN-BiLSTM consistently outperforms Persistence and AR baselines on forecasting R\textsuperscript{2} for the Huolala and Zhang Zhehan events, achieving Escalation F1 scores of 0.889 and 0.762 respectively (Figure~\ref{fig:case}). Performance varies by event type: events with clear opinion polarization (Huolala, Zhang Zhehan) show stronger conflict-index modulation than those driven primarily by information revelation (Gou Jing).
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=\textwidth]{../figures/fig_case_study.pdf}
+\includegraphics[width=0.95\textwidth]{../figures/fig_case_study.pdf}
 \caption{Case study on three Weibo reversal events. Conflict index trajectories during reversal windows with CNN-BiLSTM forecasts.}
 \label{fig:case}
 \end{figure}
@@ -238,7 +269,7 @@ Five trigger rules translate predicted trajectories into alerts:
 
 \subsection{Data Availability}
 
-The synthetic trajectory generator is included in the public code repository at \texttt{https://github.com/Megalomanian/conflict-early-warning}. The Zhihu dataset was collected via the platform's public search API. The Weibo reversal dataset is from Zhang et al.~\cite{Zhang2023Reversal} and is publicly available. The conflict index relies on publicly available pretrained models from HuggingFace.
+The synthetic trajectory generator is included in the public code repository at \url{https://github.com/Megalomanian/conflict-early-warning}. The Zhihu dataset was collected via the platform's public search API. The Weibo reversal dataset is from Zhang et al.~\cite{Zhang2023Reversal} and is publicly available. The conflict index relies on publicly available pretrained models from HuggingFace.
 
 % ======================================================================
 % References
