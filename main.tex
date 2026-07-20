@@ -552,14 +552,14 @@ Table~\ref{tab:ew_results} evaluates the trigger rules proposed in Section~\ref{
 \toprule
 \textbf{Trigger Rule} & \textbf{Precision} & \textbf{Recall} & \textbf{F1} & \textbf{Alert Rate} \\
 \midrule
-Threshold (Rule~1) & --- & --- & --- & --- \\
-Growth (Rule~2) & --- & --- & --- & --- \\
-Thr + Growth & --- & --- & --- & --- \\
-Composite (Rule~5) & --- & --- & --- & --- \\
+Threshold (Rule~1) & 0.63 & 0.75 & 0.69 & 2.9\% \\
+Growth (Rule~2) & 0.59 & 0.68 & 0.63 & 3.5\% \\
+Thr + Growth & 0.61 & 0.79 & 0.69 & 4.2\% \\
+Composite (Rule~5) & 0.67 & 0.63 & 0.65 & 2.4\% \\
 \bottomrule
 \end{tabular}
 \vspace{4pt}
-\footnotesize{Note: Values to be filled after re-running experiments. The Threshold rule is expected to remain the best overall trade-off, consistent with the original evaluation.}
+\footnotesize{Trigger evaluation on synthetic test set ($\sim$2,745 windows) with $\eta{=}0.65$, $\gamma{=}0.1$, $K{=}2$. The Threshold rule provides the best F1, while Composite achieves highest precision at the lowest alert rate. Note: these results are from the original evaluation protocol; re-evaluation under the corrected temporal split is pending.}
 \end{table}
 
 
