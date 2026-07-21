@@ -29,6 +29,7 @@
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{threeparttable}
+\usepackage{threeparttable}
 \usepackage{cite}
 
 \begin{document}
@@ -372,6 +373,7 @@ Figure~\ref{fig:trajectory} shows a sample synthetic conflict trajectory and a r
 \begin{table}[t]
 \centering
 \begin{threeparttable}
+\begin{threeparttable}
 \caption{Forecasting results on synthetic trajectories (temporal split: 75\% train / 25\% test, $L{=}12$, $H{=}6$). Metrics are mean $\pm$ std over 5 independent seeds.}\label{tab:forecast_results}
 \begin{tabular}{lcccc}
 \toprule
@@ -391,7 +393,10 @@ BiGRU & 0.811$\pm$0.009 & 0.0221 & 0.0397 & \textbf{0.716} \\
 \textbf{CNN-BiLSTM (Ours)} & \textbf{0.809}$\pm$\textbf{0.010} & \textbf{0.0223} & \textbf{0.0398} & \textbf{0.710} \\
 \bottomrule
 \end{tabular}
-\vspace{4pt}
+\begin{tablenotes}
+\item All results under strict temporal ordering (no shuffling) with ECDF calibration fitted on training data only. CNN-BiLSTM, BiGRU, and Transformer achieve comparable top-tier performance.
+\end{tablenotes}
+\end{threeparttable}
 \end{table}
 
 \begin{figure}[t]
@@ -417,6 +422,7 @@ These three experiments establish a crucial boundary condition for our framework
 \begin{table}[t]
 \centering
 \begin{threeparttable}
+\begin{threeparttable}
 \caption{Real-data forecasting results under temporal split.}\label{tab:real_results}
 \begin{tabular}{lcc}
 \toprule
@@ -434,6 +440,7 @@ Weibo conflict index (Zhang Zhehan event) & 1h & $0.018$ \\
 \begin{tablenotes}
 \item All results under strict temporal ordering with train-only normalization. Weibo data: 6,407 windows from 27 reversal events. Zhihu data: 2,373 windows from 20 topics.
 \end{tablenotes}
+\end{threeparttable}
 \end{threeparttable}
 \end{table}
 
