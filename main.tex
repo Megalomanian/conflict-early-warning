@@ -29,6 +29,7 @@
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{threeparttable}
+\usepackage{float}
 \usepackage{cite}
 
 \begin{document}
@@ -343,7 +344,7 @@ For escalation detection, we report \textbf{Precision}, \textbf{Recall}, and \te
 
 Table~\ref{tab:trajectory_stats} summarizes the bin-level conflict-index trajectories computed over the 15 zhihu topics. The three unsupervised components yield calibrated scores with distinct distributional characteristics: attack intensity $\mu=0.384\pm0.207$, negative high-arousal emotion $\mu=0.402\pm0.200$, and stance polarization $\mu=0.546\pm0.245$ (means and standard deviations computed across all bins of a representative topic). After ECDF calibration and weighted fusion, the resulting conflict index $\bar{c}_t$ ranges from 0.51 to 0.73 across topics, with per-bin standard deviations of 0.02--0.05, indicating that the index captures consistent topic-level risk baselines while preserving within-topic temporal variation.
 
-\begin{table}[t]
+\begin{table}[H]
 \caption{Conflict-index trajectory statistics across 15 Zhihu topics (12h bins).}\label{tab:trajectory_stats}
 \centering
 \begin{tabular}{lrrrr}
@@ -363,13 +364,13 @@ Table~\ref{tab:trajectory_stats} summarizes the bin-level conflict-index traject
 
 Figure~\ref{fig:trajectory} shows a sample synthetic conflict trajectory and a representative multi-step forecast. Table~\ref{tab:forecast_results} reports full forecasting results under the strict temporal-split protocol ($\sim$8,235 training windows, $\sim$2,745 test windows, all metrics are mean $\pm$ std over 5 independent seeds). The deep sequential models---\textbf{CNN-BiLSTM} (R\textsuperscript{2}=$0.809\pm0.010$), \textbf{BiGRU} (R\textsuperscript{2}=$0.811\pm0.009$), and \textbf{Transformer} (R\textsuperscript{2}=$0.806\pm0.007$)---form a tight top tier with overlapping confidence intervals, all significantly outperforming non-neural baselines. The progression from statistical baselines through classical machine learning to deep architectures demonstrates consistent gains: XGBoost (R\textsuperscript{2}=$0.781$) improves substantially over AR(6) (R\textsuperscript{2}=$0.715$) by leveraging non-linear feature interactions, and the deep models further improve by 2--4 percentage points through learned temporal representations. BiGRU ($0.811$) and CNN-BiLSTM ($0.809$) are statistically indistinguishable ($\Delta$R\textsuperscript{2}=$-0.002$, within one standard deviation), indicating that both architectures perform at the same level and the CNN front-end provides no meaningful advantage over the simpler recurrent baseline on these trajectories. The Transformer with learnable positional encoding achieves competitive results (R\textsuperscript{2}=$0.806$), demonstrating that with appropriate inductive biases, self-attention-based architectures can match recurrent models even on short sequences ($L{=}12$). The Informer-Lite variant (R\textsuperscript{2}=$0.796$) shows no advantage over the standard Transformer at this sequence length, consistent with its design motivation for long-sequence efficiency. Figure~\ref{fig:model_comp} visualizes the full model comparison.
 
-\begin{figure}[t]
+\begin{figure}[H]
 \centering
 \includegraphics[width=\columnwidth]{figures/fig_trajectory_forecast.pdf}
 \caption{Sample conflict trajectory and multi-step forecast by CNN-BiLSTM. (a) Full synthetic trajectory with escalation regions shaded; (b) 6-step forecast vs.\ actual values for a representative escalation event.}\label{fig:trajectory}
 \end{figure}
 
-\begin{table}[t]
+\begin{table}[H]
 \caption{Forecasting results on synthetic trajectories (temporal split: 75\% train / 25\% test, $L{=}12$, $H{=}6$). Metrics are mean $\pm$ std over 5 independent seeds.}\label{tab:forecast_results}
 \centering
 \begin{threeparttable}
@@ -398,7 +399,7 @@ BiGRU & 0.811$\pm$0.009 & 0.0221 & 0.0397 & \textbf{0.716} \\
 \end{threeparttable}
 \end{table}
 
-\begin{figure}[t]
+\begin{figure}[H]
 \centering
 \includegraphics[width=\columnwidth]{figures/fig_model_comparison.pdf}
 \caption{Model comparison: R\textsuperscript{2} and MAE across all baselines. CNN-BiLSTM achieves the highest R\textsuperscript{2} and lowest MAE.}\label{fig:model_comp}
@@ -418,7 +419,7 @@ To assess real-world deployability, we evaluate the framework on two complementa
 
 These three experiments establish a crucial boundary condition for our framework: conflict escalation can be forecast when the target signal is objectively measurable and temporally autocorrelated (synthetic trajectories, comment volume), but not when it is a text-derived index---even in dense commenting environments. We return to the implications of this finding in Section~\ref{sec:discussion}.
 
-\begin{table}[h]
+\begin{table}[H]
 \caption{Real-data forecasting results under temporal split. Conflict index: Zhihu topics at 12h bins; Comment volume: Weibo events at 1h bins.}\label{tab:real_results}
 \centering
 \begin{threeparttable}
@@ -442,7 +443,7 @@ Weibo conflict index (Zhang Zhehan event) & 1h & $0.018$ \\
 \end{threeparttable}
 \end{table}
 
-\begin{figure}[t]
+\begin{figure}[H]
 \centering
 \includegraphics[width=\columnwidth]{figures/fig_training_curves.pdf}
 \caption{CNN-BiLSTM training and validation loss curves.}\label{fig:training}
@@ -463,25 +464,25 @@ To assess whether forecasting performance is sensitive to the choice of fusion w
 
 Beyond binary escalation detection, we measure \emph{lead time}: how many bins before the ground-truth escalation onset does the model's prediction first exceed the threshold? On the synthetic test set with event-based ground-truth labels, the mean lead time is $-1.7 \pm 3.2$ bins (positive $=$ early, negative $=$ late), with only 21\% of escalation events receiving predictions ahead of the ground-truth onset (early warning rate) and 54\% falling within $\pm 1$ bin of the onset (on-time rate). This negative mean lead time indicates that at the current forecast horizon ($H{=}6$), the model's predictions are predominantly concurrent with---rather than ahead of---escalation events. The high standard deviation ($\pm 3.2$ bins) further reveals substantial event-to-event variability. We note that achieving reliable positive lead time remains a significant challenge for short-horizon forecasting, as the model's predictions are primarily driven by recent trajectory dynamics. Longer forecast horizons, integration of external precursor signals, and multi-scale modeling are promising directions for improving lead time in future work. Figure~\ref{fig:lead_time} visualizes the lead-time distribution.
 
-\begin{figure}[ht]
+\begin{figure}[H]
 \centering
 \includegraphics[width=\columnwidth]{figures/fig_ablation.pdf}
 \caption{Ablation study: R\textsuperscript{2} and Escalation F1 under increasing noise.}\label{fig:ablation}
 \end{figure}
 
-\begin{figure}[ht]
+\begin{figure}[H]
 \centering
 \includegraphics[width=\columnwidth]{figures/fig_component_ablation.pdf}
 \caption{Component ablation on real data: removing any component reduces forecast R\textsuperscript{2}.}\label{fig:comp_ablation}
 \end{figure}
 
-\begin{figure}[ht]
+\begin{figure}[H]
 \centering
 \includegraphics[width=\columnwidth]{figures/fig_lead_time.pdf}
 \caption{Lead time analysis. (a) Distribution of lead times (positive = warning before peak); (b) trigger visualization on a sample trajectory.}\label{fig:lead_time}
 \end{figure}
 
-\begin{table}[t]
+\begin{table}[H]
 \caption{Ablation: effect of signal degradation on CNN-BiLSTM forecasting (single-run results with seed 42).}\label{tab:ablation}
 \centering
 \begin{tabular}{lcccc}
@@ -502,7 +503,7 @@ Very high noise ($\sigma{=}0.10$) & 0.0410 & 0.495 & $-$0.335 & 0.487 \\
 
 
 
-\begin{figure}[t]
+\begin{figure}[H]
 \centering
 \includegraphics[width=\columnwidth]{figures/fig_case_study.pdf}
 \caption{Conflict index trajectory for the Huolala incident. The shaded region indicates the annotated reversal window.}\label{fig:case_study}
