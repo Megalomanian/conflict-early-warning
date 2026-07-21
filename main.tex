@@ -29,7 +29,6 @@
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{threeparttable}
-\usepackage{threeparttable}
 \usepackage{cite}
 
 \begin{document}
@@ -371,10 +370,10 @@ Figure~\ref{fig:trajectory} shows a sample synthetic conflict trajectory and a r
 \end{figure}
 
 \begin{table}[t]
+\caption{Forecasting results on synthetic trajectories (temporal split: 75\% train / 25\% test, $L{=}12$, $H{=}6$). Metrics are mean $\pm$ std over 5 independent seeds.}\label{tab:forecast_results}
 \centering
 \begin{threeparttable}
-\begin{threeparttable}
-\caption{Forecasting results on synthetic trajectories (temporal split: 75\% train / 25\% test, $L{=}12$, $H{=}6$). Metrics are mean $\pm$ std over 5 independent seeds.}\label{tab:forecast_results}
+
 \begin{tabular}{lcccc}
 \toprule
 \textbf{Model} & \textbf{R\textsuperscript{2}} & \textbf{MAE} & \textbf{RMSE} & \textbf{Esc-F1} \\
@@ -420,10 +419,10 @@ To assess real-world deployability, we evaluate the framework on two complementa
 These three experiments establish a crucial boundary condition for our framework: conflict escalation can be forecast when the target signal is objectively measurable and temporally autocorrelated (synthetic trajectories, comment volume), but not when it is a text-derived index---even in dense commenting environments. We return to the implications of this finding in Section~\ref{sec:discussion}.
 
 \begin{table}[t]
+\caption{Real-data forecasting results under temporal split. Conflict index: Zhihu topics at 12h bins; Comment volume: Weibo events at 1h bins.}\label{tab:real_results}
 \centering
 \begin{threeparttable}
-\begin{threeparttable}
-\caption{Real-data forecasting results under temporal split.}\label{tab:real_results}
+
 \begin{tabular}{lcc}
 \toprule
 \textbf{Dataset \& Target} & \textbf{Bins} & \textbf{R\textsuperscript{2}} \\
@@ -440,7 +439,6 @@ Weibo conflict index (Zhang Zhehan event) & 1h & $0.018$ \\
 \begin{tablenotes}
 \item All results under strict temporal ordering with train-only normalization. Weibo data: 6,407 windows from 27 reversal events. Zhihu data: 2,373 windows from 20 topics.
 \end{tablenotes}
-\end{threeparttable}
 \end{threeparttable}
 \end{table}
 
