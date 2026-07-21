@@ -369,7 +369,7 @@ Figure~\ref{fig:trajectory} shows a sample synthetic conflict trajectory and a r
 \end{figure}
 
 \begin{table}[t]
-\caption{Forecasting results on synthetic trajectories (temporal split: 75\% train / 25\% test, $L{=}12$, $H{=}6$). Metrics are mean $\pm$ std over 5 independent seeds.}\label{tab:forecast_results}
+\caption{Forecasting results on synthetic trajectories (temporal split: 75\% train / 25\% test, $L{=}12$, $H{=}6$). Metrics are mean $\pm$ std over 5 independent seeds. All results under strict temporal ordering with ECDF calibration fitted on training data only.}\label{tab:forecast_results}
 \centering
 \begin{tabular}{lcccc}
 \toprule
@@ -390,7 +390,6 @@ BiGRU & 0.811$\pm$0.009 & 0.0221 & 0.0397 & \textbf{0.716} \\
 \bottomrule
 \end{tabular}
 \vspace{4pt}
-{\raggedright\footnotesize All results obtained under strict temporal ordering (no shuffling) with ECDF calibration fitted on training data only. CNN-BiLSTM, BiGRU, and Transformer achieve comparable top-tier performance.\par}
 \end{table}
 
 \begin{figure}[t]
@@ -414,7 +413,7 @@ To assess real-world deployability, we evaluate the framework on two complementa
 These three experiments establish a crucial boundary condition for our framework: conflict escalation can be forecast when the target signal is objectively measurable and temporally autocorrelated (synthetic trajectories, comment volume), but not when it is a text-derived index---even in dense commenting environments. We return to the implications of this finding in Section~\ref{sec:discussion}.
 
 \begin{table}[t]
-\caption{Real-data forecasting results under temporal split. Conflict index: Zhihu topics at 12h bins; Comment volume: Weibo events at 1h bins.}\label{tab:real_results}
+\caption{Real-data forecasting results under temporal split. Conflict index: Zhihu topics at 12h bins; Comment volume: Weibo events at 1h bins. All results under strict temporal ordering with train-only normalization. Weibo data: 6,407 windows from 27 events. Zhihu data: 2,373 windows from 20 topics.}\label{tab:real_results}
 \centering
 \begin{tabular}{lcc}
 \toprule
