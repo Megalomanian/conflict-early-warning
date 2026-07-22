@@ -1,0 +1,174 @@
+\relax 
+\citation{Vosoughi2018}
+\citation{Steinert2015,Arcila2024}
+\citation{Vosoughi2018}
+\citation{Wang2020}
+\citation{Wang2020}
+\citation{Dhumpati2025}
+\citation{Kaity2020}
+\citation{Gama2014}
+\citation{Abdalgader2025}
+\@writefile{toc}{\contentsline {section}{\numberline {I}Introduction}{1}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {I-A}}Challenges in Governing Social Media Public Opinion}{1}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {I-A}1}Information Cascades and Offline Spillovers}{1}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {I-A}2}Delays in Post-hoc Sentiment Analysis}{1}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {I-A}3}Research Gaps in Early Warning}{1}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {I-B}}Limitations of Existing Technical Paradigms}{1}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {I-B}1}Lexicon/Rule-Based Systems: Cross-Language and Sarcasm Fragility}{1}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {I-B}2}Static Classifiers: Concept Drift and Out-of-Distribution Failure}{1}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {I-B}3}Post-Level Semantic Analysis without Temporal Escalation Modeling}{1}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {I-C}}Contributions of This Work}{1}{}\protected@file@percent }
+\citation{birjali2021sentiment,wahid2025crisis}
+\citation{birjali2021sentiment}
+\citation{ghosh2024safespeech}
+\citation{Wulczyn2017}
+\citation{ghosh2024safespeech}
+\citation{Mu2023IPSO}
+\citation{Mu2023IPSO}
+\citation{singh2025cupcdlstm}
+\citation{upadhyay2024satcobilstm}
+\citation{liu2025memory}
+\citation{lou2024cnnlstm}
+\citation{zhou2021informer}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {I-D}}Paper Structure Overview}{2}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {II}Related Work}{2}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-A}}Deep Learning for Sentiment and Emotion Understanding}{2}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-B}}Risk Scoring for Harmful Content and Hazardous Conversations}{2}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-C}}Temporal Forecasting of Public Opinion Trends with LSTM Variants}{2}{}\protected@file@percent }
+\citation{xu2025d2}
+\citation{xu2025hyperidp}
+\citation{xu2025hyperidpB}
+\citation{gu2025affective}
+\citation{kucuk2020stance}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-D}}Information Cascade and Diffusion Prediction}{3}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {III}Conflict-Index Formulation and CNN-BiLSTM Forecasting Framework}{3}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-A}}Problem Definition}{3}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-B}}Conflict-Index Quantification without Manual Labels}{3}{}\protected@file@percent }
+\newlabel{sec:conflict_index}{{\mbox  {III-B}}{3}}
+\newlabel{eq:conflict_index_fusion}{{5}{3}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-B}1}Attack/Antagonism Intensity from a Pretrained Harm Model}{3}{}\protected@file@percent }
+\newlabel{eq:attack_score}{{6}{3}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-B}2}Emotion Intensity from a Zero-Shot Emotion Model}{3}{}\protected@file@percent }
+\newlabel{eq:emotion_score}{{7}{3}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-B}3}Stance Polarization via Within-Bin Semantic Bimodality}{3}{}\protected@file@percent }
+\citation{ghafouri2024echo}
+\citation{paschalides2025polar}
+\newlabel{eq:embedding}{{8}{4}}
+\newlabel{eq:camp_separation}{{9}{4}}
+\newlabel{eq:alignment_confidence}{{10}{4}}
+\newlabel{eq:stance_score}{{11}{4}}
+\newlabel{sec:calibration}{{\mbox  {III-B}4}{4}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-B}4}Distribution Calibration by Percentile Mapping}{4}{}\protected@file@percent }
+\newlabel{eq:ecdf}{{12}{4}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-B}5}Bin-Level Aggregation for Topic Risk Trajectories}{4}{}\protected@file@percent }
+\newlabel{eq:topk_agg}{{13}{4}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-C}}CNN-BiLSTM Temporal Forecasting}{4}{}\protected@file@percent }
+\newlabel{sec:lstm_forecast}{{\mbox  {III-C}}{4}}
+\@writefile{loa}{\contentsline {algorithm}{\numberline {1}{\ignorespaces Unsupervised Conflict Index Computation}}{4}{}\protected@file@percent }
+\newlabel{alg:conflict_index}{{1}{4}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-C}1}Input Windowing and Forecast Target}{4}{}\protected@file@percent }
+\newlabel{eq:lstm_input_window}{{14}{4}}
+\newlabel{eq:lstm_target_window}{{15}{4}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-C}2}CNN-BiLSTM Architecture}{4}{}\protected@file@percent }
+\newlabel{eq:cnn_lstm_head}{{18}{4}}
+\citation{bert-multilingual-sentiment}
+\citation{wang2020minilm}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-C}3}Training Objective}{5}{}\protected@file@percent }
+\newlabel{eq:lstm_loss}{{19}{5}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {III-C}4}Online Inference}{5}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {IV}Experiments}{5}{}\protected@file@percent }
+\newlabel{sec:experiments}{{IV}{5}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-A}}Research Questions}{5}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-B}}Dataset and Preprocessing}{5}{}\protected@file@percent }
+\newlabel{sec:dataset}{{\mbox  {IV-B}}{5}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {IV-B}1}Real-World Zhihu Dataset}{5}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {IV-B}2}Synthetic Conflict Trajectories}{5}{}\protected@file@percent }
+\newlabel{eq:synthetic}{{20}{5}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-C}}Implementation Details}{5}{}\protected@file@percent }
+\newlabel{sec:impl}{{\mbox  {IV-C}}{5}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {IV-C}1}Conflict-Index Computation}{5}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {IV-C}2}CNN-BiLSTM Forecaster}{5}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-D}}Baselines}{5}{}\protected@file@percent }
+\citation{Mu2023IPSO}
+\citation{Zhang2024TRESP}
+\citation{zhou2021informer}
+\citation{Mu2023IPSO}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-E}}Evaluation Metrics}{6}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-F}}Main Results}{6}{}\protected@file@percent }
+\newlabel{sec:main_results}{{\mbox  {IV-F}}{6}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {IV-F}1}Conflict-Index Trajectories on Real Data (RQ1)}{6}{}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {I}{\ignorespaces Conflict-index trajectory statistics across 15 Zhihu topics (12h bins).}}{6}{}\protected@file@percent }
+\newlabel{tab:trajectory_stats}{{I}{6}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {IV-F}2}LSTM Forecasting Performance (RQ2)}{6}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Sample conflict trajectory and multi-step forecast by CNN-BiLSTM. (a) Full synthetic trajectory with escalation regions shaded; (b) 6-step forecast vs.\ actual values for a representative escalation event.}}{6}{}\protected@file@percent }
+\newlabel{fig:trajectory}{{1}{6}}
+\citation{Zhang2023Reversal}
+\@writefile{lot}{\contentsline {table}{\numberline {II}{\ignorespaces Forecasting results on synthetic trajectories (temporal split: 75\% train / 25\% test, $L{=}12$, $H{=}6$). Metrics are mean $\pm $ std over 5 independent seeds.}}{7}{}\protected@file@percent }
+\newlabel{tab:forecast_results}{{II}{7}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Model comparison: R\textsuperscript  {2} and MAE across all baselines. Deep models (BiGRU, CNN-BiLSTM, Transformer) form a tight top tier.}}{7}{}\protected@file@percent }
+\newlabel{fig:model_comp}{{2}{7}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {IV-F}3}Real-Data Evaluation: When Conflict Can and Cannot Be Forecast}{7}{}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {III}{\ignorespaces Real-data forecasting results under temporal split. Conflict index: Zhihu topics at 12h bins; Comment volume: Weibo events at 1h bins.}}{7}{}\protected@file@percent }
+\newlabel{tab:real_results}{{III}{7}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces CNN-BiLSTM training and validation loss curves.}}{7}{}\protected@file@percent }
+\newlabel{fig:training}{{3}{7}}
+\citation{Zhang2023Reversal}
+\citation{Zhang2023Reversal}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-G}}Ablation Studies}{8}{}\protected@file@percent }
+\newlabel{sec:ablation}{{\mbox  {IV-G}}{8}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {IV-G}1}Component Contribution and Weight Sensitivity (RQ3--RQ4)}{8}{}\protected@file@percent }
+\newlabel{sec:sensitivity}{{\mbox  {IV-G}2}{8}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {IV-G}2}Fusion Weight Sensitivity Analysis}{8}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {IV-G}3}Risk-Monitoring Lead Time (RQ5)}{8}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Ablation study: R\textsuperscript  {2} and Escalation F1 under increasing noise.}}{8}{}\protected@file@percent }
+\newlabel{fig:ablation}{{4}{8}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Component ablation on real data: removing any component reduces forecast R\textsuperscript  {2}.}}{8}{}\protected@file@percent }
+\newlabel{fig:comp_ablation}{{5}{8}}
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces Lead time analysis. (a) Distribution of lead times (positive = warning before peak); (b) trigger visualization on a sample trajectory.}}{8}{}\protected@file@percent }
+\newlabel{fig:lead_time}{{6}{8}}
+\@writefile{lot}{\contentsline {table}{\numberline {IV}{\ignorespaces Ablation: effect of signal degradation on CNN-BiLSTM forecasting (single-run results with seed 42).}}{8}{}\protected@file@percent }
+\newlabel{tab:ablation}{{IV}{8}}
+\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces Conflict index trajectory for the Huolala incident. The shaded region indicates the annotated reversal window.}}{8}{}\protected@file@percent }
+\newlabel{fig:case_study}{{7}{8}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-H}}Case Study: Real-World Public Opinion Reversal Events}{8}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-I}}Factors Governing Conflict-Index Forecastability}{9}{}\protected@file@percent }
+\newlabel{sec:discussion}{{\mbox  {IV-I}}{9}}
+\newlabel{sec:attribution}{{\mbox  {IV-I}}{9}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-J}}Limitations}{9}{}\protected@file@percent }
+\newlabel{sec:limitations}{{\mbox  {IV-J}}{9}}
+\@writefile{toc}{\contentsline {section}{\numberline {V}Conclusion and Future Work}{9}{}\protected@file@percent }
+\bibstyle{IEEEtran}
+\bibdata{refs}
+\bibcite{Vosoughi2018}{1}
+\bibcite{Steinert2015}{2}
+\bibcite{Arcila2024}{3}
+\bibcite{Wang2020}{4}
+\bibcite{Dhumpati2025}{5}
+\bibcite{Kaity2020}{6}
+\bibcite{Gama2014}{7}
+\bibcite{Abdalgader2025}{8}
+\bibcite{birjali2021sentiment}{9}
+\bibcite{wahid2025crisis}{10}
+\bibcite{ghosh2024safespeech}{11}
+\bibcite{Wulczyn2017}{12}
+\bibcite{Mu2023IPSO}{13}
+\bibcite{singh2025cupcdlstm}{14}
+\bibcite{upadhyay2024satcobilstm}{15}
+\bibcite{liu2025memory}{16}
+\bibcite{lou2024cnnlstm}{17}
+\bibcite{zhou2021informer}{18}
+\bibcite{xu2025d2}{19}
+\bibcite{xu2025hyperidp}{20}
+\bibcite{gu2025affective}{21}
+\bibcite{kucuk2020stance}{22}
+\bibcite{ghafouri2024echo}{23}
+\bibcite{paschalides2025polar}{24}
+\bibcite{bert-multilingual-sentiment}{25}
+\bibcite{wang2020minilm}{26}
+\bibcite{Zhang2024TRESP}{27}
+\bibcite{Zhang2023Reversal}{28}
+\@writefile{toc}{\contentsline {section}{References}{10}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{Biographies}{10}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{Linli Zhu}{10}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{Ziqiang Ma}{10}{}\protected@file@percent }
+\gdef \@abspage@last{10}
