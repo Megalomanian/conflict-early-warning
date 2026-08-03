@@ -1,6 +1,23 @@
-*.aux *.bbl *.blg *.log *.out *.synctex.gz *.fls *.fdb_latexmk
-*.run.xml *.xdv *.nav *.snm *.toc *.vrb *.soc *.listing *.loa
-*.lof *.lot *.tdo
+*.aux
+*.bbl
+*.blg
+*.log
+*.out
+*.synctex.gz
+*.fls
+*.fdb_latexmk
+*.run.xml
+*.xdv
+*.nav
+*.snm
+*.toc
+*.vrb
+*.soc
+*.listing
+*.loa
+*.lof
+*.lot
+*.tdo
 *.pdf
 *.zip
 __pycache__/
