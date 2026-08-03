@@ -15,13 +15,14 @@ An **unsupervised** framework for risk forecasting of conflict escalation in soc
 
 ### Key Findings (V2 — strict temporal split)
 
-| Scenario | Target | R² | Takeaway |
-|----------|--------|-----|----------|
-| Synthetic conflict trajectories | Conflict index | **0.809 ± 0.010** | Architecture works under ideal conditions |
-| Weibo reversal events (27 pooled) | Comment volume | **0.715** | Forecaster generalizes to real dense events |
-| Zhihu discussions (20 topics) | Conflict index | **≈ 0** | Text-derived conflict at 12h bins is unpredictable |
+| Scenario | Target | Result | Takeaway |
+|----------|--------|--------|----------|
+| Synthetic conflict trajectories | Continuous conflict index | R² **0.809 ± 0.010** | Architecture works under ideal conditions |
+| Weibo reversal events (27 pooled) | Comment volume | R² **0.715** | Forecaster generalizes to real dense events |
+| Zhihu discussions (20 topics) | Raw conflict index regression | R² **≈ 0** | Exact text-derived trajectories remain unpredictable |
+| Zhihu discussions (20 topics) | Cleaned high-risk state | F1 **0.778**, recall **0.822** | Causal state history improves on persistence (F1 0.716) |
 
-**Core insight**: The conflict index reveals that text-based conflict signals at coarse temporal granularity lack short-term predictability. This negative result is informative—it defines boundary conditions that random-split protocols systematically obscure.
+**Core insight**: Exact text-derived conflict trajectories lack short-term predictability at coarse temporal granularity, but leakage-free regularization and causal smoothing support a narrower high-risk-state classification task. This positive result is bounded: its AUC (0.891) remains slightly below persistence (0.896).
 
 ### Architecture
 
@@ -117,12 +118,12 @@ Results under strict temporal ordering (no shuffling), ECDF fitted on training d
 
 ## Real-Data Results (V2 — Temporal Split)
 
-| Dataset | Target | R² |
-|---------|--------|-----|
-| Weibo 27 events, 1h bins | Comment volume (pooled) | **0.715** |
-| Zhihu 20 topics, 12h bins | Conflict index | ≈ 0 |
-| Zhihu 20 topics (Persistence) | Conflict index | -0.90 |
-| Zhihu 20 topics (AR(6)) | Conflict index | -0.00 |
+| Dataset | Target | Metric | Result |
+|---------|--------|--------|--------|
+| Weibo 27 events, 1h bins | Comment volume (pooled) | R² | **0.715** |
+| Zhihu 20 topics, 12h bins | Raw conflict index | R² | ≈ 0 |
+| Zhihu 20 topics, final 25% | Cleaned high-risk state | Logistic F1 / recall | **0.778 / 0.822** |
+| Zhihu 20 topics, final 25% | Cleaned high-risk state | Persistence F1 / recall | 0.716 / 0.584 |
 
 ## Citation
 
