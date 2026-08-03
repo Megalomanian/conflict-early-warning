@@ -767,6 +767,16 @@ if __name__ == "__main__":
     # ── Print summary ──
     print_summary_table(aggregated)
 
+    # ── Save intermediate results immediately (before slow analyses) ──
+    save_results = {k: {kk: vv for kk, vv in v.items()
+                        if kk not in ('y_true', 'y_pred', 'train_losses', 'val_losses')}
+                    for k, v in aggregated.items()}
+    with open(f"{R_DIR}/aggregated_results.pkl", "wb") as f:
+        pickle.dump(save_results, f)
+    with open(f"{R_DIR}/seed_results.pkl", "wb") as f:
+        pickle.dump(seed_results, f)
+    print(f"\nResults saved to {R_DIR}/")
+
     # ── Lead time analysis (with proper event-based evaluation) ──
     print("\n--- Lead Time Analysis (Event-Based) ---")
     # Re-train with seed=42 for lead time

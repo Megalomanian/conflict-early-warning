@@ -1,0 +1,202 @@
+{
+  "高铁是否应全面静音分车厢": {
+    "regular_grid_start": "2024-01-15 12:00:00",
+    "train_cutoff_exclusive": "2025-05-23 12:00:00",
+    "regular_grid_end": "2026-04-18 00:00:00",
+    "n_train_comments": 905,
+    "n_all_comments": 3077,
+    "n_test_comments_used_for_fit": 0,
+    "stance_fit_scope": "training_comments_only",
+    "ecdf_fit_scope": "training_comments_only"
+  },
+  "未成年人游戏限时是否足够有效": {
+    "regular_grid_start": "2024-01-09 00:00:00",
+    "train_cutoff_exclusive": "2025-05-07 12:00:00",
+    "regular_grid_end": "2026-03-26 00:00:00",
+    "n_train_comments": 86,
+    "n_all_comments": 548,
+    "n_test_comments_used_for_fit": 0,
+    "stance_fit_scope": "training_comments_only",
+    "ecdf_fit_scope": "training_comments_only"
+  },
+  "离婚冷静期是否真正减少冲动离婚": {
+    "regular_grid_start": "2024-04-18 12:00:00",
+    "train_cutoff_exclusive": "2025-06-30 12:00:00",
+    "regular_grid_end": "2026-04-18 12:00:00",
+    "n_train_comments": 750,
+    "n_all_comments": 1843,
+    "n_test_comments_used_for_fit": 0,
+    "stance_fit_scope": "training_comments_only",
+    "ecdf_fit_scope": "training_comments_only"
+  },
+  "电商仅退款机制是否伤害商家": {
+    "regular_grid_start": "2024-01-01 00:00:00",
+    "train_cutoff_exclusive": "2025-05-18 00:00:00",
+    "regular_grid_end": "2026-04-18 00:00:00",
+    "n_train_comments": 1595,
+    "n_all_comments": 2545,
+    "n_test_comments_used_for_fit": 0,
+    "stance_fit_scope": "training_comments_only",
+    "ecdf_fit_scope": "training_comments_only"
+  },
+  "相亲市场学历门槛是否过度": {
+    "regular_grid_start": "2024-03-27 12:00:00",
+    "train_cutoff_exclusive": "2025-06-22 00:00:00",
+    "regular_grid_end": "2026-04-18 12:00:00",
+    "n_train_comments": 1017,
+    "n_all_comments": 2154,
+    "n_test_comments_used_for_fit": 0,
+    "stance_fit_scope": "training_comments_only",
+    "ecdf_fit_scope": "training_comments_only"
+  },
+  "电子竞技是否应纳入正式教育体系": {
+    "regular_grid_start": "2024-05-17 00:00:00",
+    "train_cutoff_exclusive": "2025-07-12 00:00:00",
+    "regular_grid_end": "2026-04-18 12:00:00",
+    "n_train_comments": 371,
+    "n_all_comments": 701,
+    "n_test_comments_used_for_fit": 0,
+    "stance_fit_scope": "training_comments_only",
+    "ecdf_fit_scope": "training_comments_only"
+  },
+  "骑行占道争议为何持续升级": {
+    "regular_grid_start": "2024-01-24 00:00:00",
+    "train_cutoff_exclusive": "2025-05-27 12:00:00",
+    "regular_grid_end": "2026-04-19 00:00:00",
+    "n_train_comments": 715,
+    "n_all_comments": 1776,
+    "n_test_comments_used_for_fit": 0,
+    "stance_fit_scope": "training_comments_only",
+    "ecdf_fit_scope": "training_comments_only"
+  },
+  "外卖骑手超时罚款是否合理": {
+    "regular_grid_start": "2024-07-19 00:00:00",
+    "train_cutoff_exclusive": "2025-08-06 00:00:00",
+    "regular_grid_end": "2026-04-18 00:00:00",
+    "n_train_comments": 904,
+    "n_all_comments": 2098,
+    "n_test_comments_used_for_fit": 0,
+    "stance_fit_scope": "training_comments_only",
+    "ecdf_fit_scope": "training_comments_only"
+  },
+  "女性职场天花板是否仍然普遍存在": {
+    "regular_grid_start": "2024-01-12 00:00:00",
+    "train_cutoff_exclusive": "2025-05-22 12:00:00",
+    "regular_grid_end": "2026-04-18 12:00:00",
+    "n_train_comments": 1032,
+    "n_all_comments": 2169,
+    "n_test_comments_used_for_fit": 0,
+    "stance_fit_scope": "training_comments_only",
+    "ecdf_fit_scope": "training_comments_only"
+  },
+  "丁克选择是否应被尊重": {
+    "regular_grid_start": "2025-06-01 00:00:00",
+    "train_cutoff_exclusive": "2025-12-10 00:00:00",
+    "regular_grid_end": "2026-04-17 00:00:00",
+    "n_train_comments": 774,
+    "n_all_comments": 953,
+    "n_test_comments_used_for_fit": 0,
+    "stance_fit_scope": "training_comments_only",
+    "ecdf_fit_scope": "training_comments_only"
+  },
+  "婚前同居是否应被家庭接受": {
+    "regular_grid_start": "2024-01-05 00:00:00",
+    "train_cutoff_exclusive": "2025-05-16 00:00:00",
+    "regular_grid_end": "2026-04-12 12:00:00",
+    "n_train_comments": 315,
+    "n_all_comments": 1371,
+    "n_test_comments_used_for_fit": 0,
+    "stance_fit_scope": "training_comments_only",
+    "ecdf_fit_scope": "training_comments_only"
+  },
+  "公共厕所男女厕位比例是否应重新设计": {
+    "regular_grid_start": "2024-08-21 00:00:00",
+    "train_cutoff_exclusive": "2025-08-01 12:00:00",
+    "regular_grid_end": "2026-03-20 00:00:00",
+    "n_train_comments": 1023,
+    "n_all_comments": 1396,
+    "n_test_comments_used_for_fit": 0,
+    "stance_fit_scope": "training_comments_only",
+    "ecdf_fit_scope": "training_comments_only"
+  },
+  "生育补贴是否真的能提升生育率": {
+    "regular_grid_start": "2024-04-24 00:00:00",
+    "train_cutoff_exclusive": "2025-07-02 00:00:00",
+    "regular_grid_end": "2026-04-17 00:00:00",
+    "n_train_comments": 300,
+    "n_all_comments": 2396,
+    "n_test_comments_used_for_fit": 0,
+    "stance_fit_scope": "training_comments_only",
+    "ecdf_fit_scope": "training_comments_only"
+  },
+  "手机厂商预装广告是否侵犯用户权益": {
+    "regular_grid_start": "2024-01-16 00:00:00",
+    "train_cutoff_exclusive": "2025-05-21 12:00:00",
+    "regular_grid_end": "2026-04-14 00:00:00",
+    "n_train_comments": 369,
+    "n_all_comments": 1069,
+    "n_test_comments_used_for_fit": 0,
+    "stance_fit_scope": "training_comments_only",
+    "ecdf_fit_scope": "training_comments_only"
+  },
+  "明星代言翻车是否应承担连带责任": {
+    "regular_grid_start": "2024-03-14 00:00:00",
+    "train_cutoff_exclusive": "2025-06-16 12:00:00",
+    "regular_grid_end": "2026-04-18 12:00:00",
+    "n_train_comments": 385,
+    "n_all_comments": 593,
+    "n_test_comments_used_for_fit": 0,
+    "stance_fit_scope": "training_comments_only",
+    "ecdf_fit_scope": "training_comments_only"
+  },
+  "热点事件反转后媒体是否应追责": {
+    "regular_grid_start": "2024-06-22 00:00:00",
+    "train_cutoff_exclusive": "2025-07-25 00:00:00",
+    "regular_grid_end": "2026-04-16 00:00:00",
+    "n_train_comments": 421,
+    "n_all_comments": 1106,
+    "n_test_comments_used_for_fit": 0,
+    "stance_fit_scope": "training_comments_only",
+    "ecdf_fit_scope": "training_comments_only"
+  },
+  "彩礼过高是否应纳入治理": {
+    "regular_grid_start": "2024-07-02 12:00:00",
+    "train_cutoff_exclusive": "2025-07-30 12:00:00",
+    "regular_grid_end": "2026-04-18 00:00:00",
+    "n_train_comments": 481,
+    "n_all_comments": 1735,
+    "n_test_comments_used_for_fit": 0,
+    "stance_fit_scope": "training_comments_only",
+    "ecdf_fit_scope": "training_comments_only"
+  },
+  "短视频是否正在削弱深度阅读能力": {
+    "regular_grid_start": "2024-05-19 12:00:00",
+    "train_cutoff_exclusive": "2025-07-12 12:00:00",
+    "regular_grid_end": "2026-04-18 00:00:00",
+    "n_train_comments": 412,
+    "n_all_comments": 2051,
+    "n_test_comments_used_for_fit": 0,
+    "stance_fit_scope": "training_comments_only",
+    "ecdf_fit_scope": "training_comments_only"
+  },
+  "游戏抽卡机制是否属于变相赌博": {
+    "regular_grid_start": "2024-01-04 00:00:00",
+    "train_cutoff_exclusive": "2025-05-19 12:00:00",
+    "regular_grid_end": "2026-04-18 12:00:00",
+    "n_train_comments": 786,
+    "n_all_comments": 1317,
+    "n_test_comments_used_for_fit": 0,
+    "stance_fit_scope": "training_comments_only",
+    "ecdf_fit_scope": "training_comments_only"
+  },
+  "学校是否应允许学生使用ChatGPT": {
+    "regular_grid_start": "2024-01-14 12:00:00",
+    "train_cutoff_exclusive": "2025-05-21 00:00:00",
+    "regular_grid_end": "2026-04-14 00:00:00",
+    "n_train_comments": 621,
+    "n_all_comments": 1040,
+    "n_test_comments_used_for_fit": 0,
+    "stance_fit_scope": "training_comments_only",
+    "ecdf_fit_scope": "training_comments_only"
+  }
+}

@@ -17,12 +17,17 @@ from tqdm import tqdm
 warnings.filterwarnings("ignore")
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+LOCAL_FILES_ONLY = (os.environ.get("HF_HUB_OFFLINE") == "1" or
+                    os.environ.get("TRANSFORMERS_OFFLINE") == "1")
 R_DIR = "experiment_results_v2"
 os.makedirs(R_DIR, exist_ok=True)
 
 L, H = 12, 6; HIDDEN, DROPOUT = 64, 0.2
 EPOCHS, LR, PATIENCE = 100, 1e-3, 20
 TEMPORAL_SPLIT = 0.75  # first 75% time bins = train
+RISK_TRAIN_END = 0.60  # preprocessing boundary for 60/15/25 risk experiment
+SMOOTH_SPAN = 6  # causal EWMA over 6 x 12h bins (3 days)
+MIN_FUTURE_OBS = 2
 
 def notify(msg):
     os.system(f'/home/violina/projects/notice/notice "{msg}" 2>/dev/null &')
@@ -37,11 +42,16 @@ class RealConflictComputer:
         from sentence_transformers import SentenceTransformer
         print("Loading real pretrained models...")
         model_name = "nlptown/bert-base-multilingual-uncased-sentiment"
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
-        self.sent_model = AutoModelForSequenceClassification.from_pretrained(model_name).to(DEVICE)
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            model_name, local_files_only=LOCAL_FILES_ONLY)
+        self.sent_model = AutoModelForSequenceClassification.from_pretrained(
+            model_name, local_files_only=LOCAL_FILES_ONLY).to(DEVICE)
         self.sent_model.eval()
+        emb_kwargs = {"device": DEVICE}
+        if LOCAL_FILES_ONLY:
+            emb_kwargs["local_files_only"] = True
         self.emb_model = SentenceTransformer(
-            "paraphrase-multilingual-MiniLM-L12-v2", device=DEVICE)
+            "paraphrase-multilingual-MiniLM-L12-v2", **emb_kwargs)
         print("  Models loaded.")
 
     def compute_sentiment_batch(self, texts, batch_size=128):
@@ -75,18 +85,18 @@ class RealConflictComputer:
               f"Emotion μ={emotion.mean():.3f} σ={emotion.std():.3f}", flush=True)
         return {"attack": attack, "emotion": emotion, "embeddings": embs}
 
-    def stance_polarization(self, embs):
-        n = len(embs)
-        if n < 4:
-            return np.zeros(n)
+    def stance_polarization(self, train_embs, all_embs):
+        """Fit stance camps on training embeddings and score any time period."""
+        if len(train_embs) < 4:
+            return np.zeros(len(all_embs))
         from sklearn.cluster import KMeans
         from sklearn.metrics.pairwise import cosine_similarity, cosine_distances
         km = KMeans(n_clusters=2, n_init=5, random_state=42)
-        km.fit(embs)
+        km.fit(train_embs)
         c0, c1 = km.cluster_centers_
         delta = 1.0 - cosine_similarity(c0.reshape(1, -1), c1.reshape(1, -1))[0, 0]
-        d0 = cosine_distances(embs, c0.reshape(1, -1)).flatten()
-        d1 = cosine_distances(embs, c1.reshape(1, -1)).flatten()
+        d0 = cosine_distances(all_embs, c0.reshape(1, -1)).flatten()
+        d1 = cosine_distances(all_embs, c1.reshape(1, -1)).flatten()
         return min(1.0, delta) * np.abs(d0 - d1) / (d0 + d1 + 1e-8)
 
 
@@ -232,6 +242,82 @@ def train_model_temporal_generic(model_factory, X, y, device=DEVICE):
             "y_true": yte_np, "y_pred": yp}
 
 
+def build_topic_temporal_windows(trajectories, target="c_bar", smooth_span=1):
+    """Build leakage-free train/test windows with a temporal split per topic.
+
+    Normalization is fitted on each topic's training bins only. Windows whose
+    targets cross the split boundary are discarded; test inputs may use the
+    immediately preceding training history, as in online forecasting.
+    """
+    train_windows, test_windows = [], []
+    for trajectory in trajectories.values():
+        trajectory = trajectory.copy()
+        trajectory["bin"] = pd.to_datetime(trajectory["bin"])
+        trajectory = trajectory.set_index("bin").sort_index()
+        full_index = pd.date_range(
+            trajectory.index.min(), trajectory.index.max(), freq="12h")
+        raw_values = trajectory[target].astype(float).reindex(full_index)
+        observed = raw_values.notna().astype(int).to_numpy()
+        split_bin = int(len(full_index) * TEMPORAL_SPLIT)
+        train_observed = raw_values.iloc[:split_bin].dropna()
+        if len(train_observed) < L + H:
+            continue
+
+        lower, upper = train_observed.quantile([0.01, 0.99])
+        values = raw_values.clip(lower, upper).fillna(train_observed.median())
+        if smooth_span > 1:
+            values = values.ewm(span=smooth_span, adjust=False).mean()
+        values = values.to_numpy()
+        train_values = values[:split_bin]
+        mu = train_values.mean()
+        std = train_values.std()
+        if std < 1e-6:
+            std = 1.0
+        normalized = (values - mu) / std
+
+        for start in range(len(normalized) - L - H + 1):
+            target_start = start + L
+            target_end = target_start + H
+            if observed[target_start:target_end].sum() < MIN_FUTURE_OBS:
+                continue
+            window = (normalized[start:target_start],
+                      normalized[target_start:target_end])
+            if target_end <= split_bin:
+                train_windows.append(window)
+            elif target_start >= split_bin:
+                test_windows.append(window)
+
+    def to_tensors(windows):
+        X = torch.tensor(np.asarray([w[0] for w in windows]),
+                         dtype=torch.float32).unsqueeze(-1)
+        y = torch.tensor(np.asarray([w[1] for w in windows]),
+                         dtype=torch.float32)
+        return X, y
+
+    return (*to_tensors(train_windows), *to_tensors(test_windows))
+
+
+def evaluate_ridge(X_train, y_train, X_test, y_test, alpha=10.0):
+    """Evaluate a regularized linear baseline on pre-split windows."""
+    from sklearn.linear_model import Ridge
+
+    train_features = X_train[:, :, 0].numpy()
+    test_features = X_test[:, :, 0].numpy()
+    y_train_np = y_train.numpy()
+    y_test_np = y_test.numpy()
+    predictions = np.stack([
+        Ridge(alpha=alpha).fit(train_features, y_train_np[:, h]).predict(test_features)
+        for h in range(H)
+    ], axis=1)
+    mae = float(np.mean(np.abs(predictions - y_test_np)))
+    rmse = float(np.sqrt(np.mean((predictions - y_test_np) ** 2)))
+    ss_res = np.sum((y_test_np - predictions) ** 2)
+    ss_tot = np.sum((y_test_np - y_test_np.mean()) ** 2)
+    return {"mae": mae, "rmse": rmse,
+            "r2": float(1 - ss_res / (ss_tot + 1e-8)),
+            "y_true": y_test_np, "y_pred": predictions}
+
+
 # ═══ Main ═══
 if __name__ == "__main__":
     t0 = time.time()
@@ -281,40 +367,48 @@ if __name__ == "__main__":
     all_texts = df["text"].tolist()
     r = computer.compute_batch(all_texts)
 
-    # ═══ KEY FIX: Stance per topic ═══
-    s_raw = np.zeros(len(df))
-    for topic in tqdm(df["topic"].unique(), desc="Stance"):
-        mask = df["topic"] == topic
-        idxs = np.where(mask.values)[0]
-        if len(idxs) >= 4:
-            s_raw[idxs] = computer.stance_polarization(r["embeddings"][idxs])
-
-    # ═══ KEY FIX: ECDF fitted on EARLY (temporal train) data only ═══
-    # For each topic, we use the first TEMPORAL_SPLIT fraction of its bins
-    # to fit the QuantileTransformer, then transform all data
+    # ═══ Leakage-free stance and ECDF calibration ═══
+    # Use the exact first-60%-of-regular-grid boundary later used by the risk
+    # experiment.  Test comments never influence K-Means centers or ECDFs.
     from sklearn.preprocessing import QuantileTransformer
 
     df["bin"] = pd.to_datetime(df["ts"], unit="s").dt.floor("12h")
+    s_raw = np.zeros(len(df))
     a_cal = np.zeros(len(df))
     e_cal = np.zeros(len(df))
     s_cal = np.zeros(len(df))
+    preprocessing_audit = {}
 
     for topic in df["topic"].unique():
-        t_mask = df["topic"] == topic
-        t_idxs = np.where(t_mask.values)[0]
-        if len(t_idxs) < 20:
+        t_df = df[df["topic"] == topic].sort_values("bin")
+        if len(t_df) < 20:
             continue
-        # Sort by time
-        sorted_order = df.iloc[t_idxs].sort_values("bin").index
-        sorted_positions = [np.where(t_idxs == df.index.get_loc(idx))[0][0]
-                            if idx in df.index[t_idxs] else 0
-                            for idx in sorted_order]
-        # Actually, simpler: just get the temporal order
-        t_df = df.iloc[t_idxs].sort_values("bin")
-        n_train = int(len(t_df) * TEMPORAL_SPLIT)
-        train_idx_in_topic = t_df.index[:n_train]
+
+        # Match the downstream trajectory endpoints: only bins with >=3 raw
+        # records survive aggregation, but gaps remain on the regular grid.
+        retained_bins = t_df.groupby("bin").size()
+        retained_bins = retained_bins[retained_bins >= 3].index
+        if len(retained_bins) < L + H + 10:
+            continue
+        full_index = pd.date_range(retained_bins.min(), retained_bins.max(), freq="12h")
+        train_end = int(len(full_index) * RISK_TRAIN_END)
+        if train_end <= 0 or train_end >= len(full_index):
+            continue
+        train_cutoff = full_index[train_end]
+        train_df = t_df[t_df["bin"] < train_cutoff]
+        if len(train_df) < 4:
+            continue
+
+        train_positions = np.asarray([df.index.get_loc(i) for i in train_df.index])
+        all_positions = np.asarray([df.index.get_loc(i) for i in t_df.index])
+
+        # Fit semantic camps on training comments only, then score all periods
+        # against the fixed training-period centers.
+        s_raw[all_positions] = computer.stance_polarization(
+            r["embeddings"][train_positions], r["embeddings"][all_positions])
 
         # Fit calibrator on training portion only
+        n_train = len(train_positions)
         qt_a = QuantileTransformer(n_quantiles=min(1000, n_train),
                                    output_distribution="uniform", random_state=42)
         qt_e = QuantileTransformer(n_quantiles=min(1000, n_train),
@@ -322,16 +416,15 @@ if __name__ == "__main__":
         qt_s = QuantileTransformer(n_quantiles=min(1000, n_train),
                                    output_distribution="uniform", random_state=42)
 
-        train_a = r["attack"][[df.index.get_loc(i) for i in train_idx_in_topic]]
-        train_e = r["emotion"][[df.index.get_loc(i) for i in train_idx_in_topic]]
-        train_s = s_raw[[df.index.get_loc(i) for i in train_idx_in_topic]]
+        train_a = r["attack"][train_positions]
+        train_e = r["emotion"][train_positions]
+        train_s = s_raw[train_positions]
 
         qt_a.fit(train_a.reshape(-1, 1))
         qt_e.fit(train_e.reshape(-1, 1))
         qt_s.fit(train_s.reshape(-1, 1))
 
         # Transform all data for this topic
-        all_positions = [df.index.get_loc(i) for i in t_df.index]
         a_cal[all_positions] = qt_a.transform(
             r["attack"][all_positions].reshape(-1, 1)).flatten()
         e_cal[all_positions] = qt_e.transform(
@@ -339,7 +432,18 @@ if __name__ == "__main__":
         s_cal[all_positions] = qt_s.transform(
             s_raw[all_positions].reshape(-1, 1)).flatten()
 
-        print(f"  {topic[:40]}: fitted ECDF on {n_train}/{len(t_df)} train samples")
+        preprocessing_audit[topic] = {
+            "regular_grid_start": str(full_index.min()),
+            "train_cutoff_exclusive": str(train_cutoff),
+            "regular_grid_end": str(full_index.max()),
+            "n_train_comments": int(n_train),
+            "n_all_comments": int(len(t_df)),
+            "n_test_comments_used_for_fit": 0,
+            "stance_fit_scope": "training_comments_only",
+            "ecdf_fit_scope": "training_comments_only",
+        }
+        print(f"  {topic[:40]}: train-only stance/ECDF on "
+              f"{n_train}/{len(t_df)} comments, cutoff={train_cutoff}")
 
     # Fuse: sigmoid(w_a*a + w_e*e + w_s*s)
     df["c"] = (1.0 / (1.0 + np.exp(-(0.5 * a_cal + 0.3 * e_cal + 0.2 * s_cal)))).clip(0, 1)
@@ -348,6 +452,8 @@ if __name__ == "__main__":
     # Build trajectories per topic
     trajectories = {}
     for topic in df["topic"].unique():
+        if topic not in preprocessing_audit:
+            continue
         tdf = df[df["topic"] == topic].sort_values("bin")
         agg = tdf.groupby("bin").agg(
             c_bar=("c", lambda x: x.nlargest(max(1, int(len(x) * 0.15))).mean()),
@@ -369,75 +475,29 @@ if __name__ == "__main__":
     # Save trajectories
     with open(f"{R_DIR}/trajectories_real_model.pkl", "wb") as f:
         pickle.dump(trajectories, f)
+    with open(f"{R_DIR}/preprocessing_audit.json", "w", encoding="utf-8") as f:
+        json.dump(preprocessing_audit, f, ensure_ascii=False, indent=2)
 
     # ══ Part B: Real Data Forecasting (Temporal Split) ══
     print("\n" + "=" * 60)
     print("Part B: Real Data Conflict Forecasting (Temporal Split)")
     print("=" * 60)
 
-    topic_windows = []
-    for topic in df["topic"].unique():
-        if topic not in trajectories:
-            continue
-        vals = trajectories[topic]["c_bar"].values
-        mu, std = vals.mean(), vals.std()
-        if std < 1e-6:
-            std = 1.0
-        vn = (vals - mu) / std
-        for j in range(len(vn) - L - H + 1):
-            topic_windows.append((vn[j:j + L], vn[j + L:j + L + H]))
+    from optimize_real_signal_v2 import run_complete_evaluation
 
-    if len(topic_windows) >= 30:
-        Xr = torch.tensor(np.array([w[0] for w in topic_windows]),
-                          dtype=torch.float32).unsqueeze(-1)
-        yr = torch.tensor(np.array([w[1] for w in topic_windows]),
-                          dtype=torch.float32)
-
-        r_real_cnn = train_model_temporal(Xr, yr)
-        r_real_bigru = train_model_temporal_generic(lambda: BiGRUModel(), Xr, yr)
-
-        # Baselines with temporal split
-        n_all = len(Xr); n_tr = int(n_all * TEMPORAL_SPLIT)
-        Xtr_r, ytr_r = Xr[:n_tr], yr[:n_tr]
-        Xte_r, yte_r = Xr[n_tr:], yr[n_tr:]
-        yte_r_np = yte_r.numpy()
-
-        def eval_baseline(yp_v):
-            mae = float(np.mean(np.abs(yp_v - yte_r_np)))
-            ss_r = np.sum((yte_r_np - yp_v) ** 2)
-            ss_t = np.sum((yte_r_np - yte_r_np.mean()) ** 2)
-            r2 = 1 - ss_r / (ss_t + 1e-8)
-            return {"mae": mae, "r2": r2}
-
-        # Persistence
-        yp_p = np.tile(Xte_r[:, -1, 0].numpy().reshape(-1, 1), (1, H))
-        bl_real = {"Persistence": eval_baseline(yp_p)}
-
-        # AR(6)
-        from sklearn.linear_model import LinearRegression
-        Xar_tr = Xtr_r[:, -6:, 0].numpy()
-        Xar_te = Xte_r[:, -6:, 0].numpy()
-        y_ar = np.stack([LinearRegression().fit(Xar_tr, ytr_r[:, h].numpy()).predict(Xar_te)
-                         for h in range(H)], 1)
-        bl_real["AR(6)"] = eval_baseline(y_ar)
-
-        # XGBoost
-        from xgboost import XGBRegressor
-        Xtr_f_r = Xtr_r[:, :, 0].numpy()
-        Xte_f_r = Xte_r[:, :, 0].numpy()
-        y_xgb_r = np.stack([XGBRegressor(n_estimators=100, max_depth=4, learning_rate=0.1,
-                                          verbosity=0).fit(Xtr_f_r, ytr_r[:, h].numpy()).predict(Xte_f_r)
-                            for h in range(H)], 1)
-        bl_real["XGBoost"] = eval_baseline(y_xgb_r)
-
-        print(f"\n  Real-Data Conflict Forecasting ({len(topic_windows)} windows, "
-              f"temporal {TEMPORAL_SPLIT:.0%}/{1-TEMPORAL_SPLIT:.0%} split):")
-        for name, res in [("Persistence", bl_real["Persistence"]),
-                          ("AR(6)", bl_real["AR(6)"]),
-                          ("XGBoost", bl_real["XGBoost"]),
-                          ("BiGRU", r_real_bigru),
-                          ("CNN-BiLSTM", r_real_cnn)]:
-            print(f"    {name:15s} R²={res['r2']:.4f}")
+    cleaning_output = run_complete_evaluation(trajectories)
+    selected_span = cleaning_output["selected_span"]
+    selected_feature_group = cleaning_output["selected_feature_group"]
+    real_cleaning_result = cleaning_output["selected_result"]
+    test_result = real_cleaning_result["test"]
+    print(f"\n  Selected EWMA span on validation F1: {selected_span}")
+    print(f"  Selected feature group: {selected_feature_group}")
+    print(f"    Logistic:    AUC={test_result['logistic']['auc']:.4f} "
+          f"Recall={test_result['logistic']['recall']:.4f} "
+          f"F1={test_result['logistic']['f1']:.4f}")
+    print(f"    Persistence: AUC={test_result['persistence']['auc']:.4f} "
+          f"Recall={test_result['persistence']['recall']:.4f} "
+          f"F1={test_result['persistence']['f1']:.4f}")
 
     # ══ Part C: Synthetic Data (Temporal Split, for comparison) ══
     print("\n" + "=" * 60)
@@ -478,6 +538,7 @@ if __name__ == "__main__":
     bl_syn = {"Persistence": eval_baseline_full(yp_ps)}
 
     # AR(6)
+    from sklearn.linear_model import LinearRegression
     Xar_tr_s = Xtr_s[:, -6:, 0].numpy(); Xar_te_s = Xte_s[:, -6:, 0].numpy()
     y_ar_s = np.stack([LinearRegression().fit(Xar_tr_s, ytr_s[:, h].numpy()).predict(Xar_te_s)
                        for h in range(H)], 1)
@@ -491,6 +552,7 @@ if __name__ == "__main__":
     bl_syn["SVR"] = eval_baseline_full(y_svr_s)
 
     # XGBoost
+    from xgboost import XGBRegressor
     y_xgb_s = np.stack([XGBRegressor(n_estimators=100, max_depth=4, learning_rate=0.1,
                                       verbosity=0).fit(
         Xtr_f_s, ytr_s[:, h].numpy()).predict(Xte_f_s) for h in range(H)], 1)
@@ -515,17 +577,16 @@ if __name__ == "__main__":
     print("Summary (Temporal Split + Train-Only ECDF):")
     print(f"  Synthetic CNN-BiLSTM:  R²={r_cnn['r2']:.4f} MAE={r_cnn['mae']:.4f} "
           f"Esc-F1={r_cnn['esc_f1']:.4f}")
-    if len(topic_windows) >= 30:
-        print(f"  Real Data CNN-BiLSTM:  R²={r_real_cnn['r2']:.4f}")
+    print(f"  Real cleaned risk state: F1={test_result['logistic']['f1']:.4f} "
+          f"(persistence={test_result['persistence']['f1']:.4f})")
     print(f"{'═'*60}")
 
     # ── Save ──
     all_results = {
         "synthetic_cnn": r_cnn, "synthetic_bigru": r_bigru,
         "synthetic_baselines": bl_syn,
-        "real_cnn": r_real_cnn if len(topic_windows) >= 30 else None,
-        "real_bigru": r_real_bigru if len(topic_windows) >= 30 else None,
-        "real_baselines": bl_real if len(topic_windows) >= 30 else None,
+        "real_cleaning": real_cleaning_result,
+        "real_cleaning_sensitivity": cleaning_output["sensitivity"],
         "trajectories": trajectories,
     }
     with open(f"{R_DIR}/real_model_results.pkl", "wb") as f:
@@ -533,4 +594,5 @@ if __name__ == "__main__":
 
     tmin = (time.time() - t0) / 60
     print(f"\nDone in {tmin:.1f} min")
-    notify(f"Real model V2 done! Synth R²={r_cnn['r2']:.4f} ({tmin:.1f}min)")
+    notify(f"Real model V2 done: cleaned F1={test_result['logistic']['f1']:.4f}, "
+           f"persistence={test_result['persistence']['f1']:.4f} ({tmin:.1f}min)")
