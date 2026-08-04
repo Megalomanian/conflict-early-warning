@@ -31,3 +31,6 @@ experiment_results/
 uv.lock
 .python-version
 notebook/
+# Downloaded Detox data (80MB CSVs) — keep out of git
+wikipedia_detox/*.csv
+wikipedia_detox/.hub_detox/
