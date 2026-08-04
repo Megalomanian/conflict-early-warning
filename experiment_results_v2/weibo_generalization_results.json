@@ -1,0 +1,435 @@
+{
+  "platform": "weibo_reversal",
+  "n_events_raw": 27,
+  "n_comments": 224781,
+  "n_trajectories": 20,
+  "audit": {
+    "张哲瀚事件": {
+      "n_train": 15455,
+      "n_all": 22545,
+      "n_bins": 176
+    },
+    "阿里女员工被侵害": {
+      "n_train": 9782,
+      "n_all": 10971,
+      "n_bins": 213
+    },
+    "腾讯老干妈事件": {
+      "n_train": 9402,
+      "n_all": 9517,
+      "n_bins": 97
+    },
+    "周口男婴丢失案": {
+      "n_train": 11369,
+      "n_all": 11555,
+      "n_bins": 143
+    },
+    "重庆公交车坠江事故": {
+      "n_train": 8593,
+      "n_all": 8753,
+      "n_bins": 167
+    },
+    "河南高考答题卡掉包": {
+      "n_train": 9484,
+      "n_all": 10077,
+      "n_bins": 87
+    },
+    "榆林产妇坠楼事件": {
+      "n_train": 8024,
+      "n_all": 8141,
+      "n_bins": 109
+    },
+    "哈尔滨天价鱼": {
+      "n_train": 2672,
+      "n_all": 2681,
+      "n_bins": 106
+    },
+    "秦皇岛男孩救人牺牲": {
+      "n_train": 5868,
+      "n_all": 6471,
+      "n_bins": 97
+    },
+    "货拉拉乘客坠车身亡": {
+      "n_train": 18197,
+      "n_all": 32383,
+      "n_bins": 150
+    },
+    "男孩殴打外国小女孩": {
+      "n_train": 2686,
+      "n_all": 3361,
+      "n_bins": 81
+    },
+    "名牌大学生偷外卖事件": {
+      "n_train": 4063,
+      "n_all": 4089,
+      "n_bins": 72
+    },
+    "罗冠军事件": {
+      "n_train": 9859,
+      "n_all": 9885,
+      "n_bins": 102
+    },
+    "肖战粉丝川美聚集": {
+      "n_train": 20407,
+      "n_all": 20479,
+      "n_bins": 78
+    },
+    "山东女快递员下跪事件": {
+      "n_train": 7505,
+      "n_all": 7559,
+      "n_bins": 78
+    },
+    "安徽女子称遭“奸杀”威胁": {
+      "n_train": 3698,
+      "n_all": 3810,
+      "n_bins": 72
+    },
+    "淘宝店家果小云被薅羊毛": {
+      "n_train": 1993,
+      "n_all": 3113,
+      "n_bins": 83
+    },
+    "00后CEO狂怼成年人": {
+      "n_train": 5170,
+      "n_all": 5242,
+      "n_bins": 94
+    },
+    "吨姐路虎堵宝马事件": {
+      "n_train": 4092,
+      "n_all": 4378,
+      "n_bins": 107
+    },
+    "苟晶高考被替事件": {
+      "n_train": 5976,
+      "n_all": 20816,
+      "n_bins": 171
+    }
+  },
+  "selected_span": 36,
+  "selected_feature_group": "state_only",
+  "selected_c": 0.01,
+  "selected_decision_threshold": 0.49999999999999994,
+  "test": {
+    "n": 275,
+    "prevalence": 0.4254545454545455,
+    "logistic": {
+      "auc": 0.9358974358974359,
+      "precision": 0.6473988439306358,
+      "recall": 0.9572649572649573,
+      "f1": 0.7724137931034483
+    },
+    "persistence": {
+      "auc": 0.9547765876879801,
+      "precision": 0.9411764705882353,
+      "recall": 0.8205128205128205,
+      "f1": 0.8767123287671232
+    },
+    "topic_bootstrap_logistic_minus_persistence": {
+      "f1": {
+        "mean_difference": -0.09546782887615456,
+        "ci95": [
+          -0.2164839001686796,
+          0.0007788387074564446
+        ]
+      },
+      "recall": {
+        "mean_difference": 0.17390225724413846,
+        "ci95": [
+          0.026602409638554172,
+          0.49999999999999994
+        ]
+      },
+      "auc": {
+        "mean_difference": -0.02110186661733951,
+        "ci95": [
+          -0.0477125883537799,
+          -0.0030240545404090226
+        ]
+      }
+    },
+    "ridge": {
+      "r2": 0.8011205366872496,
+      "mae": 0.39628261490088645
+    },
+    "persistence_regression": {
+      "r2": 0.8641288287023464,
+      "mae": 0.2792519808514713
+    }
+  },
+  "valid": {
+    "n": 144,
+    "prevalence": 0.3333333333333333,
+    "logistic": {
+      "auc": 1.0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "persistence": {
+      "auc": 1.0,
+      "precision": 1.0,
+      "recall": 0.8958333333333334,
+      "f1": 0.945054945054945
+    },
+    "ridge": {
+      "r2": 0.9108031871438558,
+      "mae": 0.2995954562457448
+    },
+    "persistence_regression": {
+      "r2": 0.9352397999925253,
+      "mae": 0.22219916216052404
+    }
+  },
+  "topic_summary": {
+    "n_topics": 13,
+    "f1_improved_topics": 4,
+    "recall_improved_topics": 4
+  },
+  "zhihu_test_reference": {
+    "n": 1706,
+    "prevalence": 0.4155920281359906,
+    "logistic": {
+      "auc": 0.89139067413807,
+      "precision": 0.7379746835443038,
+      "recall": 0.8222849083215797,
+      "f1": 0.7778519012675117
+    },
+    "persistence": {
+      "auc": 0.8958115531361364,
+      "precision": 0.9261744966442953,
+      "recall": 0.5839210155148096,
+      "f1": 0.7162629757785467
+    },
+    "per_topic": {
+      "丁克选择是否应被尊重": {
+        "n": 28,
+        "prevalence": 0.25,
+        "logistic_f1": 0.42857142857142855,
+        "persistence_f1": 0.5454545454545454,
+        "logistic_recall": 0.42857142857142855,
+        "persistence_recall": 0.42857142857142855,
+        "logistic_auc": 0.7482993197278911,
+        "persistence_auc": 0.7414965986394557
+      },
+      "公共厕所男女厕位比例是否应重新设计": {
+        "n": 28,
+        "prevalence": 0.17857142857142858,
+        "logistic_f1": 0.5263157894736842,
+        "persistence_f1": 0.0,
+        "logistic_recall": 1.0,
+        "persistence_recall": 0.0,
+        "logistic_auc": 0.782608695652174,
+        "persistence_auc": 0.782608695652174
+      },
+      "外卖骑手超时罚款是否合理": {
+        "n": 97,
+        "prevalence": 0.14432989690721648,
+        "logistic_f1": 0.6363636363636364,
+        "persistence_f1": 0.7272727272727273,
+        "logistic_recall": 1.0,
+        "persistence_recall": 0.5714285714285714,
+        "logistic_auc": 1.0,
+        "persistence_auc": 0.9948364888123924
+      },
+      "女性职场天花板是否仍然普遍存在": {
+        "n": 140,
+        "prevalence": 0.5928571428571429,
+        "logistic_f1": 0.7777777777777778,
+        "persistence_f1": 0.7445255474452555,
+        "logistic_recall": 0.7590361445783133,
+        "persistence_recall": 0.6144578313253012,
+        "logistic_auc": 0.8421052631578947,
+        "persistence_auc": 0.8518283660959629
+      },
+      "婚前同居是否应被家庭接受": {
+        "n": 75,
+        "prevalence": 0.5066666666666667,
+        "logistic_f1": 0.8735632183908046,
+        "persistence_f1": 0.835820895522388,
+        "logistic_recall": 1.0,
+        "persistence_recall": 0.7368421052631579,
+        "logistic_auc": 0.9573257467994309,
+        "persistence_auc": 0.9566145092460882
+      },
+      "学校是否应允许学生使用ChatGPT": {
+        "n": 27,
+        "prevalence": 0.5925925925925926,
+        "logistic_f1": 0.8205128205128205,
+        "persistence_f1": 0.7857142857142857,
+        "logistic_recall": 1.0,
+        "persistence_recall": 0.6875,
+        "logistic_auc": 0.8181818181818181,
+        "persistence_auc": 0.8181818181818181
+      },
+      "彩礼过高是否应纳入治理": {
+        "n": 145,
+        "prevalence": 0.5793103448275863,
+        "logistic_f1": 0.8571428571428571,
+        "persistence_f1": 0.847682119205298,
+        "logistic_recall": 0.8214285714285714,
+        "persistence_recall": 0.7619047619047619,
+        "logistic_auc": 0.9307181889149102,
+        "persistence_auc": 0.9410616705698673
+      },
+      "手机厂商预装广告是否侵犯用户权益": {
+        "n": 62,
+        "prevalence": 0.41935483870967744,
+        "logistic_f1": 0.7727272727272727,
+        "persistence_f1": 0.7441860465116279,
+        "logistic_recall": 0.6538461538461539,
+        "persistence_recall": 0.6153846153846154,
+        "logistic_auc": 0.936965811965812,
+        "persistence_auc": 0.9433760683760685
+      },
+      "明星代言翻车是否应承担连带责任": {
+        "n": 8,
+        "prevalence": 1.0,
+        "logistic_f1": 1.0,
+        "persistence_f1": 0.8571428571428571,
+        "logistic_recall": 1.0,
+        "persistence_recall": 0.75
+      },
+      "未成年人游戏限时是否足够有效": {
+        "n": 34,
+        "prevalence": 0.4117647058823529,
+        "logistic_f1": 0.6666666666666666,
+        "persistence_f1": 0.782608695652174,
+        "logistic_recall": 0.6428571428571429,
+        "persistence_recall": 0.6428571428571429,
+        "logistic_auc": 0.9178571428571429,
+        "persistence_auc": 0.9107142857142857
+      },
+      "游戏抽卡机制是否属于变相赌博": {
+        "n": 26,
+        "prevalence": 0.3076923076923077,
+        "logistic_f1": 0.5,
+        "persistence_f1": 0.2,
+        "logistic_recall": 0.375,
+        "persistence_recall": 0.125,
+        "logistic_auc": 0.6875,
+        "persistence_auc": 0.7152777777777778
+      },
+      "热点事件反转后媒体是否应追责": {
+        "n": 64,
+        "prevalence": 0.21875,
+        "logistic_f1": 0.4,
+        "persistence_f1": 0.42105263157894735,
+        "logistic_recall": 0.7142857142857143,
+        "persistence_recall": 0.2857142857142857,
+        "logistic_auc": 0.6414285714285715,
+        "persistence_auc": 0.6457142857142857
+      },
+      "生育补贴是否真的能提升生育率": {
+        "n": 179,
+        "prevalence": 0.49162011173184356,
+        "logistic_f1": 0.7976878612716763,
+        "persistence_f1": 0.7172413793103448,
+        "logistic_recall": 0.7840909090909091,
+        "persistence_recall": 0.5909090909090909,
+        "logistic_auc": 0.9024725274725275,
+        "persistence_auc": 0.9135864135864136
+      },
+      "电商仅退款机制是否伤害商家": {
+        "n": 52,
+        "prevalence": 0.28846153846153844,
+        "logistic_f1": 0.6818181818181818,
+        "persistence_f1": 0.23529411764705882,
+        "logistic_recall": 1.0,
+        "persistence_recall": 0.13333333333333333,
+        "logistic_auc": 0.7441441441441441,
+        "persistence_auc": 0.7711711711711711
+      },
+      "电子竞技是否应纳入正式教育体系": {
+        "n": 28,
+        "prevalence": 0.42857142857142855,
+        "logistic_f1": 0.75,
+        "persistence_f1": 0.631578947368421,
+        "logistic_recall": 1.0,
+        "persistence_recall": 0.5,
+        "logistic_auc": 0.9583333333333334,
+        "persistence_auc": 0.9635416666666666
+      },
+      "相亲市场学历门槛是否过度": {
+        "n": 131,
+        "prevalence": 0.549618320610687,
+        "logistic_f1": 0.7832167832167832,
+        "persistence_f1": 0.6428571428571429,
+        "logistic_recall": 0.7777777777777778,
+        "persistence_recall": 0.5,
+        "logistic_auc": 0.8272128060263654,
+        "persistence_auc": 0.8373352165725048
+      },
+      "短视频是否正在削弱深度阅读能力": {
+        "n": 182,
+        "prevalence": 0.37362637362637363,
+        "logistic_f1": 0.7724137931034483,
+        "persistence_f1": 0.7796610169491526,
+        "logistic_recall": 0.8235294117647058,
+        "persistence_recall": 0.6764705882352942,
+        "logistic_auc": 0.9080237358101135,
+        "persistence_auc": 0.9169246646026832
+      },
+      "离婚冷静期是否真正减少冲动离婚": {
+        "n": 104,
+        "prevalence": 0.10576923076923077,
+        "logistic_f1": 0.6470588235294118,
+        "persistence_f1": 0.15384615384615385,
+        "logistic_recall": 1.0,
+        "persistence_recall": 0.09090909090909091,
+        "logistic_auc": 0.946236559139785,
+        "persistence_auc": 0.9481915933528837
+      },
+      "骑行占道争议为何持续升级": {
+        "n": 104,
+        "prevalence": 0.375,
+        "logistic_f1": 0.8947368421052632,
+        "persistence_f1": 0.7096774193548387,
+        "logistic_recall": 0.8717948717948718,
+        "persistence_recall": 0.5641025641025641,
+        "logistic_auc": 0.9455621301775149,
+        "persistence_auc": 0.9400394477317554
+      },
+      "高铁是否应全面静音分车厢": {
+        "n": 192,
+        "prevalence": 0.453125,
+        "logistic_f1": 0.847457627118644,
+        "persistence_f1": 0.6857142857142857,
+        "logistic_recall": 0.8620689655172413,
+        "persistence_recall": 0.5517241379310345,
+        "logistic_auc": 0.9482211275314724,
+        "persistence_auc": 0.9538040503557744
+      }
+    },
+    "topic_bootstrap_logistic_minus_persistence": {
+      "f1": {
+        "mean_difference": 0.061971501858591294,
+        "ci95": [
+          0.017641918895375794,
+          0.10809313288054456
+        ]
+      },
+      "recall": {
+        "mean_difference": 0.24107435792906154,
+        "ci95": [
+          0.17331585677749362,
+          0.3170236367406179
+        ]
+      },
+      "auc": {
+        "mean_difference": -0.004602384888283031,
+        "ci95": [
+          -0.007914476145123816,
+          -0.001286999721660073
+        ]
+      }
+    },
+    "ridge": {
+      "r2": 0.464740342301586,
+      "mae": 1.1976103286510962
+    },
+    "persistence_regression": {
+      "r2": 0.6400860634232493,
+      "mae": 1.0801666989684806
+    }
+  }
+}

@@ -39,14 +39,14 @@ RESULT_DIR = Path("experiment_results_v2")
 
 
 # ═══ Dataset Construction ═══
-def build_windows(trajectories, span, quantile=QUANTILE):
+def build_windows(trajectories, span, quantile=QUANTILE, freq="12h"):
     splits = {"train": [], "valid": [], "test": []}
 
     for topic, trajectory in trajectories.items():
         frame = trajectory.copy()
         frame["bin"] = pd.to_datetime(frame["bin"])
         frame = frame.set_index("bin").sort_index()
-        full_index = pd.date_range(frame.index.min(), frame.index.max(), freq="12h")
+        full_index = pd.date_range(frame.index.min(), frame.index.max(), freq=freq)
         frame = frame[list(FEATURE_COLUMNS)].reindex(full_index)
         observed = frame["c_bar"].notna().astype(float)
         train_end = int(len(frame) * TRAIN_END)
@@ -207,8 +207,8 @@ def per_topic_metrics(items, y, probability, prediction,
 
 def evaluate_span(trajectories, span, bootstrap=False, quantile=QUANTILE,
                   feature_group="full", tune_classifier=True,
-                  include_test=True):
-    splits = build_windows(trajectories, span, quantile=quantile)
+                  include_test=True, freq="12h"):
+    splits = build_windows(trajectories, span, quantile=quantile, freq=freq)
     X_train_all, y_train, y_reg_train = arrays(splits["train"])
     if tune_classifier:
         classifier, c_value, decision_threshold = fit_selected_classifier(
@@ -273,10 +273,10 @@ def evaluate_span(trajectories, span, bootstrap=False, quantile=QUANTILE,
     return results
 
 
-def select_span(trajectories, quantile=QUANTILE, feature_group="full"):
+def select_span(trajectories, quantile=QUANTILE, feature_group="full", freq="12h"):
     sensitivity = [
         evaluate_span(trajectories, span, quantile=quantile,
-                      feature_group=feature_group, include_test=False)
+                      feature_group=feature_group, include_test=False, freq=freq)
         for span in SPAN_CANDIDATES
     ]
     selected = max(
@@ -284,14 +284,14 @@ def select_span(trajectories, quantile=QUANTILE, feature_group="full"):
     return selected["span"], sensitivity
 
 
-def run_complete_evaluation(trajectories):
+def run_complete_evaluation(trajectories, freq="12h"):
     """Run validation-only model selection and final held-out evaluation."""
-    selected_span, sensitivity = select_span(trajectories)
+    selected_span, sensitivity = select_span(trajectories, freq=freq)
     feature_ablation = {}
     for feature_group in FEATURE_GROUPS:
         feature_ablation[feature_group] = evaluate_span(
             trajectories, selected_span, quantile=QUANTILE,
-            feature_group=feature_group, include_test=False)
+            feature_group=feature_group, include_test=False, freq=freq)
 
     # Prefer the smallest feature set within 0.005 validation F1 of the best.
     best_validation_f1 = max(
@@ -305,12 +305,12 @@ def run_complete_evaluation(trajectories):
         eligible_groups, key=lambda group: len(FEATURE_GROUPS[group]))
     best = evaluate_span(
         trajectories, selected_span, feature_group=selected_feature_group,
-        bootstrap=True)
+        bootstrap=True, freq=freq)
 
     threshold_sensitivity = {
         str(quantile): evaluate_span(
             trajectories, selected_span, quantile=quantile,
-            feature_group=selected_feature_group)
+            feature_group=selected_feature_group, freq=freq)
         for quantile in QUANTILE_CANDIDATES
     }
 
