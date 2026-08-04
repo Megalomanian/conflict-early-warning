@@ -51,7 +51,7 @@ The final Zhihu classification set contains 1,428 training, 680 validation, and 
 ## Repository Layout
 
 ```text
-main.tex, main_cn.tex              Paper sources
+main.tex, main_cn.tex              Paper sources (main.tex = feasibility line; main_negative.tex = superseded negative-results draft)
 srep_submission/                   Scientific Reports submission version
 run_experiments_v2.py              Synthetic multi-seed benchmark (authoritative)
 experiment_real_model_v2.py        Text signals and real-data forecasting (authoritative)
