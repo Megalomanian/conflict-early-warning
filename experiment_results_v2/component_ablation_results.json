@@ -1,5 +1,5 @@
 {
-  "fidelity_ok": true,
+  "fidelity_ok": false,
   "variants_weights": {
     "full": [
       0.5,
@@ -454,6 +454,5 @@
       "f1_improved_topics": 12,
       "recall_improved_topics": 12
     }
-  },
-  "fidelity_note": "Structure matches the saved trajectories exactly (20 topics, identical bin counts). Max |Δc_bar|=1.9e-4 vs trajectories_real_model.pkl is model-inference numerical noise (saved pickle produced on a different GPU/torch build); tolerance relaxed from 1e-8 to 1e-3."
+  }
 }

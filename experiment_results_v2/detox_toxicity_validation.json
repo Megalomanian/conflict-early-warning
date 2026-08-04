@@ -1,0 +1,16 @@
+{
+  "model": "unitary/multilingual-toxic-xlm-roberta",
+  "n": 191634,
+  "positive_rate": 0.10007096861725999,
+  "spearman_rho": 0.5072348370335912,
+  "spearman_p": 0.0,
+  "pearson_r": 0.8522280197044975,
+  "pearson_p": 0.0,
+  "auc": 0.9879330854486843,
+  "attack_mean_label1": 0.8055531978607178,
+  "attack_mean_label0": 0.033350300043821335,
+  "comparison_review_sentiment_proxy": {
+    "spearman_rho": 0.254,
+    "auc": 0.744
+  }
+}

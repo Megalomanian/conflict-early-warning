@@ -1,0 +1,64 @@
+{
+  "platform": "weibo_reversal_v2",
+  "n_events_raw": 27,
+  "n_comments": 224781,
+  "n_trajectories": 20,
+  "models": {
+    "attack": "unitary/multilingual-toxic-xlm-roberta",
+    "emotion": "joeddav/xlm-roberta-large-xnli"
+  },
+  "selected_span": 48,
+  "selected_feature_group": "state_only",
+  "test": {
+    "n": 275,
+    "prevalence": 0.2545454545454545,
+    "logistic": {
+      "auc": 0.9892682926829268,
+      "precision": 0.7777777777777778,
+      "recall": 1.0,
+      "f1": 0.875
+    },
+    "persistence": {
+      "auc": 0.9897560975609756,
+      "precision": 0.9710144927536232,
+      "recall": 0.9571428571428572,
+      "f1": 0.9640287769784173
+    },
+    "topic_bootstrap_logistic_minus_persistence": {
+      "f1": {
+        "mean_difference": -0.10538036897408026,
+        "ci95": [
+          -0.2844662004662004,
+          0.009708737864077666
+        ]
+      },
+      "recall": {
+        "mean_difference": 0.053139745488710304,
+        "ci95": [
+          0.0,
+          0.19524390243902423
+        ]
+      },
+      "auc": {
+        "mean_difference": -0.004129776096425723,
+        "ci95": [
+          -0.029969988554083386,
+          0.0038480392156863674
+        ]
+      }
+    },
+    "ridge": {
+      "r2": 0.8855181005653254,
+      "mae": 0.3842661938075891
+    },
+    "persistence_regression": {
+      "r2": 0.9084601661426556,
+      "mae": 0.3042254757300469
+    }
+  },
+  "topic_summary": {
+    "n_topics": 13,
+    "f1_improved_topics": 1,
+    "recall_improved_topics": 2
+  }
+}

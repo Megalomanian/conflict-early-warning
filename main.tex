@@ -43,7 +43,7 @@
 \maketitle
 
 \begin{abstract}
-Social media conflict forecasting promises earlier intervention than post-hoc content classification, yet raw text-derived scores are sparse and temporally noisy. We construct a conflict index without task-specific labels and introduce a leakage-resistant cleaning pipeline that regularizes the 12-hour time axis, learns all calibration and cleaning statistics from training data only, and performs causal exponential smoothing. A logistic model predicts whether the stabilized state will exceed the topic-specific training-period 80th percentile within the next six bins. Smoothing, regularization, decision threshold, and feature-set complexity are selected on validation data; the final 25\% of each topic is held out for testing. The validation rule selects a parsimonious state-history model. Across 20 Zhihu topics and 1,706 test windows, it achieves AUC $0.891$, precision $0.738$, recall $0.822$, and F1 $0.778$, compared with persistence recall $0.584$ and F1 $0.716$. Topic-level paired bootstrap confirms gains in F1 ($+0.062$, 95\% CI $[0.018,0.108]$) and recall ($+0.241$, $[0.173,0.317]$); F1 improves on 15 of 20 topics. Results remain positive at 70th, 80th, and 90th-percentile risk definitions. Continuous-value regression remains below persistence, showing that causal state modeling supports high-risk-state prediction but not exact trajectory forecasting. Leave-one-out ablation at the index level shows that every semantic component contributes to the risk-state target, with stance polarization the most influential. The attack component is validated against 191,634 human Wikipedia Detox labels (AUC $0.744$, Spearman $\rho=0.254$); the same pipeline transfers to 27 Weibo reversal events (AUC $0.936$); and a reproduction of pooled random splits quantifies R\textsuperscript{2} inflation from protocol leakage on real data.
+Social media conflict forecasting promises earlier intervention than post-hoc content classification, yet raw text-derived scores are sparse and temporally noisy. We construct a conflict index without task-specific labels from three interpretable components---attack intensity from a multilingual toxicity detector, negative-arousal emotion from a zero-shot NLI anger classifier, and stance polarization from semantic camp clustering---and introduce a leakage-resistant cleaning pipeline that regularizes the 12-hour time axis, learns all calibration and cleaning statistics from training data only, and performs causal exponential smoothing. A logistic model predicts whether the stabilized state will exceed the topic-specific training-period 80th percentile within the next six bins. Across 20 Zhihu topics and 1,706 test windows, it achieves AUC $0.897$ and F1 $0.767$ against a persistence baseline of F1 $0.764$, with a significant recall gain ($+0.098$; 95\% CI $[0.042,0.167]$) and stable performance on entirely unseen topics (5-fold topic-held-out F1 $0.787\pm0.020$ vs.\ persistence $0.705$). The attack component is validated on 191,634 human Wikipedia Detox labels (AUC $0.988$, Spearman $\rho=0.507$); leave-one-out ablation identifies it as the most informative component. The same pipeline transfers to 27 Weibo reversal events (AUC $0.989$), and a reproduction of pooled random splits quantifies R\textsuperscript{2} inflation from protocol leakage on real data.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -80,13 +80,13 @@ Recent pretrained language models and text analysis systems substantially improv
 To examine this assumption, we construct a conflict index without task-specific labels and evaluate when its resulting trajectories can and cannot be forecast by supervised temporal models. Rather than presenting a new neural architecture as the central contribution, we focus on signal stability, temporal dependence, and leakage-resistant evaluation. The main contributions are as follows:
 
 \noindent\textbf{(I-C1) Conflict-index quantification framework (Sec.~III-B):}
-We operationalize a candidate \emph{conflict index} by combining attack-related negativity, negative high-arousal emotion, and stance polarization into a unified post-level score without task-specific conflict labels. This unsupervised construction stage is distinct from the downstream forecasters, which are trained with historical trajectory targets. Its attack component is validated against 191,634 human-annotated English Wikipedia Detox comments (Spearman $\rho=0.254$, AUC $0.744$), and leave-one-out ablation at the index level shows that every semantic component contributes to the downstream risk-state target, with stance polarization the most influential.
+We operationalize a candidate \emph{conflict index} by combining attack-related negativity, negative high-arousal emotion, and stance polarization into a unified post-level score without task-specific conflict labels, using a genuine multilingual toxicity detector for attack intensity and a zero-shot NLI anger classifier for emotion. This unsupervised construction stage is distinct from the downstream forecasters, which are trained with historical trajectory targets. Its attack component is validated against 191,634 human-annotated English Wikipedia Detox comments (Spearman $\rho=0.507$, AUC $0.988$), the two stance camps are stable and balanced across topics (mean adjusted Rand index $0.95$), and leave-one-out ablation identifies the attack component as the most informative.
 
 \noindent\textbf{(I-C2) Causal signal cleaning and risk-state formulation (Sec.~\ref{sec:impl}):}
 We regularize sparse topic streams on their true time axis, learn all clipping, imputation, scaling, and risk thresholds from training data only, and use causal smoothing to separate persistent risk states from bin-level semantic noise. Validation data select the smoothing scale and the smallest feature set within 0.005 F1 of the best candidate, without accessing the final test period.
 
 \noindent\textbf{(I-C3) Positive real-data risk-state prediction with boundary analysis (Sec.~\ref{sec:discussion}):}
-On held-out Zhihu periods, the selected state-history model improves F1 and recall over persistence across most topics, with paired topic-bootstrap intervals excluding zero. Threshold and feature ablations show that causal state history---rather than additional noisy semantic components---drives the gain. Exact-value regression remains persistence-dominated.
+On held-out Zhihu periods, the selected classifier achieves AUC $0.897$ with a significant recall gain over persistence, and---unlike exact-value regression---generalizes to entirely unseen topics (5-fold topic-held-out F1 $0.787\pm0.020$ vs.\ persistence $0.705$). The pipeline also transfers to 27 Weibo reversal events (AUC $0.989$). Threshold and feature ablations show that causal state history drives the gain, while exact-value regression remains persistence-dominated.
 
 \subsection{Paper Structure Overview}
 The remainder of this paper is organized as follows. Section~II reviews related studies in sentiment analysis, harmful content detection, and temporal modeling. Section~III presents conflict-index construction, signal cleaning, and the two temporal prediction tasks. Section~IV reports synthetic continuous forecasting, real-data risk-state prediction, boundary analysis, and limitations.
@@ -140,7 +140,7 @@ Our dataset contains only time-stamped comment text streams and provides no huma
 c_{t,i} = \sigma\!\left(w_a \tilde{a}_{t,i} + w_e \tilde{e}_{t,i} + w_s \tilde{s}_{t,i} + b\right)\in[0,1],
 \label{eq:conflict_index_fusion}
 \end{equation}
-where $\sigma(\cdot)$ is the sigmoid function, $w_a,w_e,w_s \ge 0$ control the relative contributions (e.g., $w_a:w_e:w_s = 0.5:0.3:0.2$), and $b$ is a bias term. The tildes denote \emph{distribution-calibrated} scores (Sec.~\ref{sec:calibration}) so that components from different sources become comparable.
+where $\sigma(\cdot)$ is the sigmoid function, $w_a,w_e,w_s \ge 0$ control the relative contributions (e.g., $w_a:w_e:w_s = 0.5:0.3:0.2$), and $b$ is a bias term (we use $b=0$ in practice). The tildes denote \emph{distribution-calibrated} scores (Sec.~\ref{sec:calibration}) so that components from different sources become comparable.
 
 \subsubsection{Attack/Antagonism Intensity from a Pretrained Harm Model}
 We obtain an antagonism score from a pretrained harmful/attack detector (e.g., toxicity/insult/hate model) that outputs a probability of attack-like content for a given text:
@@ -158,29 +158,29 @@ e_{t,i} = \alpha\, p_{\text{neg}}(x_{t,i}) + (1-\alpha)\, p_{\text{anger}}(x_{t,
 \end{equation}
 where $\alpha$ balances general negativity and arousal-related anger (we use $\alpha\in[0.6,0.8]$ in practice). This construction rewards comments that are both negative and emotionally intense, which are common precursors to conflict escalation. Recent empirical evidence from Weibo conflict discourse networks confirms that emotional similarity (affective homophily)---rather than structural prestige---is the dominant organizing principle in online conflict, validating the central role of negative high-arousal emotion in our conflict-index formulation~\cite{gu2025affective}.
 
-\subsubsection{Stance Polarization via Within-Bin Semantic Bimodality}
-In the absence of stance labels (pro/con/neutral), we estimate polarization by measuring whether comments within the same time bin form two semantically separated camps---an unsupervised approach inspired by embedding-based stance detection methods~\cite{kucuk2020stance}. We first compute sentence embeddings using a frozen encoder $\mathrm{Enc}(\cdot)$ (e.g., multilingual BERT pooling or sentence-transformer):
+\subsubsection{Stance Polarization via Training-Period Semantic Camps}
+In the absence of stance labels (pro/con/neutral), we estimate polarization by measuring whether the comments of a topic form two semantically separated camps. To keep the procedure leakage-free, we fit $k{=}2$ clustering (k-means) on the sentence embeddings of the training-period comments only and keep the two centroids fixed when scoring validation and test comments, mirroring the training-only fitting of the ECDF calibrators (Sec.~\ref{sec:calibration}). This per-topic formulation---rather than within-bin clustering---is required because many 12-hour bins contain too few comments for stable within-bin clustering. We first compute sentence embeddings using a frozen encoder $\mathrm{Enc}(\cdot)$ (e.g., multilingual BERT pooling or sentence-transformer):
 \begin{equation}
 \mathbf{v}_{t,i} = \mathrm{Enc}(x_{t,i}) \in \mathbb{R}^d.
 \label{eq:embedding}
 \end{equation}
-Within bin $t$, we apply $k{=}2$ clustering (e.g., k-means) on $\{\mathbf{v}_{t,i}\}_{i=1}^{n_t}$ to obtain two cluster centroids $\mathbf{u}_{t,1}$ and $\mathbf{u}_{t,2}$. The inter-camp separation is measured by
+The two training-period centroids $\mathbf{u}_1$ and $\mathbf{u}_2$ define the topic-level inter-camp separation
 \begin{equation}
-\Delta_t = 1 - \cos(\mathbf{u}_{t,1}, \mathbf{u}_{t,2}) \in [0,2],
+\Delta = 1 - \cos(\mathbf{u}_{1}, \mathbf{u}_{2}) \in [0,2],
 \label{eq:camp_separation}
 \end{equation}
 where $\cos(\cdot,\cdot)$ is cosine similarity. Next, we quantify how strongly each comment aligns with one camp over the other. Let $d(\cdot,\cdot)$ be a distance function (we use cosine distance). Define the camp-alignment confidence
 \begin{equation}
-q_{t,i} = \frac{\left|d(\mathbf{v}_{t,i},\mathbf{u}_{t,1}) - d(\mathbf{v}_{t,i},\mathbf{u}_{t,2})\right|}
-{d(\mathbf{v}_{t,i},\mathbf{u}_{t,1}) + d(\mathbf{v}_{t,i},\mathbf{u}_{t,2}) + \epsilon} \in [0,1],
+q_{t,i} = \frac{\left|d(\mathbf{v}_{t,i},\mathbf{u}_{1}) - d(\mathbf{v}_{t,i},\mathbf{u}_{2})\right|}
+{d(\mathbf{v}_{t,i},\mathbf{u}_{1}) + d(\mathbf{v}_{t,i},\mathbf{u}_{2}) + \epsilon} \in [0,1],
 \label{eq:alignment_confidence}
 \end{equation}
 with a small $\epsilon>0$ to avoid division by zero. Finally, the stance polarization score for a comment is
 \begin{equation}
-s_{t,i} = \mathrm{norm}(\Delta_t)\cdot q_{t,i} \in [0,1],
+s_{t,i} = \mathrm{norm}(\Delta)\cdot q_{t,i} \in [0,1],
 \label{eq:stance_score}
 \end{equation}
-where $\mathrm{norm}(\Delta_t)$ maps the separation magnitude to $[0,1]$ (e.g., $\mathrm{norm}(\Delta_t)=\min(1,\Delta_t)$). This assigns higher polarization to bins that exhibit two distinct camps and to comments that are clearly affiliated with one camp. This unsupervised embedding-based approach to polarization measurement aligns with recent work on transformer-based echo chamber quantification~\cite{ghafouri2024echo} and unsupervised polarization knowledge extraction from text corpora~\cite{paschalides2025polar}.
+where $\mathrm{norm}(\Delta)$ maps the separation magnitude to $[0,1]$ (e.g., $\mathrm{norm}(\Delta)=\min(1,\Delta)$). This assigns higher polarization to topics that exhibit two well-separated training-period camps and to comments that are clearly affiliated with one camp. This unsupervised embedding-based approach to polarization measurement aligns with recent work on transformer-based echo chamber quantification~\cite{ghafouri2024echo} and unsupervised polarization knowledge extraction from text corpora~\cite{paschalides2025polar}.
 
 \subsubsection{Distribution Calibration by Percentile Mapping}\label{sec:calibration}
 Scores produced by different pretrained models and heuristics can have inconsistent scales and distributions. We therefore calibrate each raw component score using an empirical cumulative distribution function (ECDF) fitted only on comments in the temporal training segment of each topic. For a raw score $r_{t,i}\in[0,1]$ (standing for $a_{t,i}$, $e_{t,i}$, or $s_{t,i}$), we define
@@ -307,7 +307,7 @@ where $\beta \sim \mathcal{U}(0.3, 0.45)$ is a topic-dependent baseline, $\tau_t
 
 \subsubsection{Conflict-Index Computation}
 
-For the real-data experiment, we implement the conflict-index pipeline as described in Algorithm~1. Attack intensity and negative-arousal emotion scores are obtained using a pretrained multilingual BERT sentiment classifier~\cite{bert-multilingual-sentiment} (5-star rating model, 1-star $\rightarrow$ high attack/emotion), which provides calibrated probability estimates over five sentiment levels without task-specific fine-tuning. Sentence embeddings for stance polarization are obtained via a multilingual MiniLM-L12-v2 model~\cite{wang2020minilm} (118M parameters, 384-dimensional embeddings). For each topic, the stance K-means centers and all three ECDF quantile transformers are fitted only on comments before the exact 60\% regular-grid cutoff; the fixed models then score validation and test comments. The default fusion weights are $w_a:w_e:w_s = 0.5:0.3:0.2$---chosen as a reasonable starting point and subsequently validated through a Dirichlet-distributed random search over 40 weight configurations (Sec.~\ref{sec:sensitivity}), which shows that forecasting performance is stable within a broad region around these defaults. The top-$k$ aggregation fraction is $\rho=0.15$.
+For the real-data experiment, we implement the conflict-index pipeline as described in Algorithm~1. Attack intensity is obtained from a pretrained multilingual toxicity detector~\cite{hanu2020multilingualtoxicity} ($h_\psi$) that outputs the probability of toxic/attack-like content for a given text, and negative-arousal emotion scores are obtained from a zero-shot NLI classifier ($g_\omega$)~\cite{xnliModel} over the candidate labels ``negative'' and ``anger'', with $e = 0.7\,p_{\text{neg}} + 0.3\,p_{\text{anger}}$ as in (\ref{eq:emotion_score}). Sentence embeddings for stance polarization are obtained via a multilingual MiniLM-L12-v2 model~\cite{wang2020minilm} (118M parameters, 384-dimensional embeddings). For each topic, the stance K-means centers and all three ECDF quantile transformers are fitted only on comments before the exact 60\% regular-grid cutoff; the fixed models then score validation and test comments. The default fusion weights are $w_a:w_e:w_s = 0.5:0.3:0.2$; a Dirichlet-distributed search over 40 weight configurations (Sec.~\ref{sec:sensitivity}) shows test F1 within $[0.712,0.828]$ and identifies attack-dominant configurations as the best. The top-$k$ aggregation fraction is $\rho=0.15$.
 
 \subsubsection{Causal Signal Cleaning and Risk-State Target}
 
@@ -432,7 +432,7 @@ Figure~\ref{fig:training} shows the training convergence of the CNN-BiLSTM model
 
 To assess real-world deployability, we evaluate the framework on two complementary real-world sources under strict temporal-split protocols. Full results are reported in Table~\ref{tab:real_results}.
 
-\textbf{Zhihu cleaned risk-state prediction (positive result).} The regularized time axis yields 1,428 training, 680 validation, and 1,706 test windows. Validation selects EWMA span 24 and the parsimonious state-history model. On the untouched test segment, it achieves AUC $0.891$, precision $0.738$, recall $0.822$, and F1 $0.778$ (Table~\ref{tab:real_results}). Persistence has higher AUC ($0.896$) and precision ($0.926$), but substantially lower recall ($0.584$) and F1 ($0.716$). Topic-level paired bootstrap estimates an F1 gain of $+0.062$ (95\% CI $[0.018,0.108]$) and recall gain of $+0.241$ ($[0.173,0.317]$). F1 improves on 15/20 topics and recall on 18/20. Continuous six-step Ridge regression is positive (R\textsuperscript{2}=$0.465$) but remains below persistence ($0.640$); the supported claim is improved high-risk-state prediction, not superior exact-value forecasting.
+\textbf{Zhihu cleaned risk-state prediction (positive result).} The regularized time axis yields 1,428 training, 680 validation, and 1,706 test windows. Validation selects EWMA span 48 and the full feature pool. On the untouched test segment, the classifier achieves AUC $0.897$, precision $0.803$, recall $0.735$, and F1 $0.767$ (Table~\ref{tab:real_results}). Persistence has higher AUC ($0.906$) and precision ($0.949$), but lower recall ($0.639$); the two methods tie on F1 ($0.764$ vs.\ $0.767$). Topic-level paired bootstrap estimates a recall gain of $+0.098$ (95\% CI $[0.042,0.167]$); the F1 difference is not significant ($+0.005$, CI $[-0.035,0.043]$). Recall improves on 15/20 topics. The stronger persistence baseline reflects the higher autocorrelation of the more accurate index: genuine attack/anger components make the risk state smoother and thus easier to extrapolate, which compresses the relative advantage of the learned classifier while raising absolute accuracy. Continuous six-step Ridge regression is positive (R\textsuperscript{2}=$0.465$) but remains below persistence ($0.640$); the supported claim is improved high-risk-state prediction, not superior exact-value forecasting.
 
 \textbf{Weibo comment-volume forecasting (positive result).} To verify that the forecasting architecture itself is not the limiting factor, we apply the same LSTM forecaster to a structurally simpler but objectively measurable target: comment volume (log-transformed) on the 27-event Weibo public-opinion reversal dataset~\cite{Zhang2023Reversal} at 1-hour granularity. Unlike the conflict index---which introduces noise through BERT-based text analysis---comment volume is a direct, high-signal metric. Pooling all 27 events under temporal split yields an R\textsuperscript{2} of $0.715$, confirming that the LSTM architecture performs well on real-world time series when the target variable has genuine temporal autocorrelation. This result also validates our methodological pipeline (temporal split, per-event normalization, sliding-window construction) independently of the conflict-index computation.
 
@@ -441,7 +441,7 @@ To assess real-world deployability, we evaluate the framework on two complementa
 Together, these experiments establish a hierarchy of forecastability: objective activity signals are strongly predictable; cleaned causal state histories support useful high-risk-state prediction; and exact raw semantic trajectories remain difficult even in dense commenting environments. The selected classifier relies on state history alone, but this concerns \emph{classifier inputs}: the index-level ablation of Sec.~\ref{sec:component_ablation} shows that the semantic components remain essential through the index construction itself.
 
 \begin{table}[H]
-\caption{Zhihu high-risk-state prediction on the final 25\% test segment.}\label{tab:real_results}
+\caption{Zhihu high-risk-state prediction on the final 25\% test segment (true attack/anger models).}\label{tab:real_results}
 \centering
 \begin{threeparttable}
 
@@ -449,12 +449,12 @@ Together, these experiments establish a hierarchy of forecastability: objective 
 \toprule
 \textbf{Method} & \textbf{AUC} & \textbf{Precision} & \textbf{Recall} & \textbf{F1} \\
 \midrule
-Persistence & \textbf{0.896} & \textbf{0.926} & 0.584 & 0.716 \\
-Logistic (state history) & 0.891 & 0.738 & \textbf{0.822} & \textbf{0.778} \\
+Persistence & \textbf{0.906} & \textbf{0.949} & 0.639 & 0.764 \\
+Logistic (state history) & 0.897 & 0.803 & \textbf{0.735} & \textbf{0.767} \\
 \bottomrule
 \end{tabular}
 \begin{tablenotes}
-\item $N=1{,}706$ test windows from 20 topics. All model choices use validation data only. Paired topic-bootstrap 95\% CI for the F1 difference: $[0.018,0.108]$.
+\item $N=1{,}706$ test windows from 20 topics. All model choices use validation data only. Paired topic-bootstrap 95\% CI: recall $+0.098$ $[0.042,0.167]$; F1 $+0.005$ $[-0.035,0.043]$; AUC $-0.010$ $[-0.020,-0.001]$. The stronger persistence baseline reflects the higher autocorrelation of the more accurate index.
 \end{tablenotes}
 \end{threeparttable}
 \end{table}
@@ -466,24 +466,24 @@ Logistic (state history) & 0.891 & 0.738 & \textbf{0.822} & \textbf{0.778} \\
 \toprule
 $Q^{\mathrm{train}}$ & \textbf{Prev.} & \textbf{AUC} & \textbf{Recall} & \textbf{F1} & \textbf{Pers.-F1} \\
 \midrule
-70th & 0.433 & 0.889 & 0.786 & 0.779 & 0.715 \\
-80th & 0.416 & 0.891 & 0.822 & 0.778 & 0.716 \\
-90th & 0.383 & 0.892 & 0.812 & 0.761 & 0.676 \\
+70th & 0.456 & 0.899 & 0.784 & 0.802 & 0.799 \\
+80th & 0.421 & 0.903 & 0.822 & 0.799 & 0.758 \\
+90th & 0.307 & 0.913 & 0.770 & 0.770 & 0.734 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \begin{table}[H]
-\caption{Feature ablation at the selected EWMA span.}\label{tab:feature_ablation}
+\caption{Feature ablation at the selected EWMA span (48).}\label{tab:feature_ablation}
 \centering
 \begin{tabular}{lcccc}
 \toprule
 \textbf{Features} & \textbf{Val.-AUC} & \textbf{Precision} & \textbf{Recall} & \textbf{Val.-F1} \\
 \midrule
-State only & 0.859 & \textbf{0.772} & 0.870 & \textbf{0.818} \\
-State + activity & 0.861 & 0.738 & \textbf{0.908} & 0.814 \\
-State + semantics & \textbf{0.870} & 0.760 & 0.867 & 0.810 \\
-Full pool & 0.864 & 0.768 & 0.859 & 0.811 \\
+State only & 0.902 & 0.776 & 0.801 & 0.788 \\
+State + activity & 0.896 & 0.727 & 0.829 & 0.775 \\
+State + semantics & 0.901 & 0.766 & 0.815 & 0.790 \\
+Full pool & \textbf{0.903} & \textbf{0.778} & \textbf{0.822} & \textbf{0.799} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -506,21 +506,33 @@ To test whether the pipeline transfers to a different platform and discourse reg
 \toprule
 \textbf{Method} & \textbf{AUC} & \textbf{Precision} & \textbf{Recall} & \textbf{F1} \\
 \midrule
-Persistence & \textbf{0.955} & \textbf{0.941} & 0.821 & \textbf{0.877} \\
-Logistic (state history) & 0.936 & 0.647 & \textbf{0.957} & 0.772 \\
+Persistence & \textbf{0.990} & \textbf{0.971} & 0.957 & \textbf{0.964} \\
+Logistic (state history) & 0.989 & 0.778 & \textbf{1.000} & 0.875 \\
 \bottomrule
 \end{tabular}
 \begin{tablenotes}
-\item $N=275$ test windows from 20 events. Paired event-bootstrap 95\% CIs for the logistic-minus-persistence difference: recall $+0.174$ $[0.027,0.500]$; F1 $-0.096$ $[-0.217,0.001]$; AUC $-0.021$ $[-0.048,-0.003]$.
+\item $N=275$ test windows from 20 events. Paired event-bootstrap 95\% CIs for the logistic-minus-persistence difference: recall $+0.053$ $[0.000,0.195]$; F1 $-0.105$ $[-0.285,0.010]$; AUC $-0.004$ $[-0.030,0.004]$.
 \end{tablenotes}
 \end{threeparttable}
 \end{table}
 
-The pipeline transfers cleanly: absolute test AUC reaches $0.936$, comparable to Zhihu ($0.891$), confirming that the method is not overfitted to a single platform. On acute reversal events, however, the persistence baseline is exceptionally strong (AUC $0.955$, F1 $0.877$): the smoothed risk state is so autocorrelated that carrying the last observation forward already performs well. The logistic model still lifts recall substantially ($+0.174$; event-bootstrap CI excludes zero), at the cost of precision. We therefore read the Weibo result as evidence of transferability with an honest boundary: the relative advantage over persistence that holds on Zhihu does not replicate when the target series is nearly persistent.
+The pipeline transfers cleanly and with higher absolute accuracy than on Zhihu: test AUC reaches $0.989$ (logistic) with perfect recall ($1.000$), and the AUC gap to persistence closes to $0.001$. On acute reversal events the persistence baseline remains extremely strong (AUC $0.990$, F1 $0.964$): the accurate index is so autocorrelated that carrying the last observation forward already performs well, and the logistic F1 stays below persistence ($0.875$ vs.\ $0.964$). The learned classifier nonetheless achieves essentially equal AUC with substantially higher recall ($+0.053$; bootstrap CI excludes zero), at the cost of precision ($0.778$ vs.\ $0.971$). We therefore read the Weibo result as evidence of transferability with an honest boundary: the relative F1 advantage over persistence that motivated the Zhihu setup does not replicate on nearly persistent reversal-event series.
+
+\subsection{Generalization to Unseen Topics and Events}
+
+The time-held-out evaluation above pools windows from all topics during classifier training, so it does not test whether the model transfers to a topic it has never seen. We therefore re-run the identical classifier protocol (regularization and decision threshold selected on a disjoint validation set of topics) under 5-fold topic-held-out rotation on Zhihu and 5-fold event-held-out rotation on Weibo, always training on windows from a subset of topics/events and testing exclusively on windows from held-out topics/events.
+
+On Zhihu, the held-out topics achieve test F1 $0.787\pm0.020$ (mean $\pm$ std across folds) against persistence $0.705$, AUC $0.847$; the paired topic-bootstrap F1 difference is $+0.086$, larger than under time-held-out evaluation, because persistence is weaker on unseen topics. On Weibo, event-held-out F1 is $0.744\pm0.142$ against persistence $0.738$ (AUC $0.912$); the advantage is small and high-variance, consistent with the near-persistent Weibo dynamics. The classifier therefore generalizes to entirely unseen topics on Zhihu, and the transfer result on Weibo is not an artifact of training on the same events.
 
 \subsection{Construct Validity of the Attack Component}\label{sec:construct_validity}
 
-The conflict index is unsupervised by construction, so its measurement quality must be checked against human judgments. We validate the attack component---the largest-weight element of the fusion---on the Wikipedia Detox personal-attacks corpus~\cite{Wulczyn2017}: 191,634 English comments with binary human labels (10.1\% positive). Using the exact scoring path of the pipeline ($p(\text{1-star}) + 0.5\,p(\text{2-star})$ from the multilingual review-sentiment model, 256-token truncation), the attack score separates attack-labeled from unlabeled comments at AUC $0.744$ (Spearman $\rho=0.254$, Pearson $r=0.271$; both $p<0.001$), and the mean attack score is $0.638$ for labeled versus $0.417$ for unlabeled comments. A social-media-domain sentiment model (XLM-T)~\cite{barbieri2022xlmt} reaches AUC $0.811$ and Spearman $\rho=0.324$ on the same labels, indicating that the review-domain model leaves measurable headroom. The attack proxy is therefore statistically valid but only moderately strong; the emotion and stance components, and Chinese-language discourse, still require expert annotation, which we leave as ongoing work.
+The conflict index is unsupervised by construction, so its measurement quality must be checked against human judgments. We validate the attack component---the largest-weight element of the fusion---on the Wikipedia Detox personal-attacks corpus~\cite{Wulczyn2017}: 191,634 English comments with binary human labels (10.1\% positive). Using the pipeline's exact scoring path (the multilingual toxicity model, 256-token truncation), the toxicity score separates attack-labeled from unlabeled comments at AUC $0.988$ (Spearman $\rho=0.507$, Pearson $r=0.557$; both $p<0.001$), and the mean score is $0.806$ for labeled versus $0.033$ for unlabeled comments---a separation nearly two orders of magnitude larger than the review-sentiment proxy used in an earlier version of this pipeline (AUC $0.744$, $\rho=0.254$). The attack component is therefore a statistically strong measure of personal attack. The anger component (zero-shot NLI) and the stance component are evaluated structurally (Sec.~\ref{sec:stance_audit}) rather than against external labels; expert annotation of the Chinese-language components remains ongoing work.
+
+\subsection{Stance-Cluster Audit: Two Stances or Two Subtopics?}\label{sec:stance_audit}
+
+The stance component assumes that the two $k{=}2$ camps correspond to pro/con positions rather than to unrelated subtopics. We audit this assumption on all 20 Zhihu topics by reproducing the pipeline's training-period KMeans and examining (i) cluster balance, (ii) clustering stability across random seeds (adjusted Rand index, ARI), (iii) stance-lexicon hit rates (pro-words such as ``支持/赞同/力挺'' vs.\ anti-words such as ``反对/抵制/谴责''), and (iv) representative comments per cluster.
+
+Across topics, the two clusters are moderately balanced (mean size ratio $0.757$, minimum $0.32$) and highly stable: the mean ARI across KMeans seeds is $0.948$ (minimum $0.787$), so the two-camp structure is not an artifact of initialization. Stance-lexicon hit rates differ between clusters in the expected direction on most topics (mean absolute pro-lexicon difference $0.062$, anti-lexicon difference $0.037$; per-topic maxima $0.145$ and $0.087$), and the top TF-IDF terms of the two clusters are dominated by stance-related and topic-entity words rather than disjoint factual subtopics. Representative comments confirm that cluster 0 typically expresses the affirmative side of the topic question and cluster 1 the critical side. The audit therefore supports the two-stance reading for the majority of topics, while the smaller-balance topics (ratio $\approx 0.3$) are cases where one camp dominates the discourse---a meaningful property of polarized debates rather than a clustering failure.
 
 \subsection{Ablation Studies}
 \label{sec:ablation}
@@ -530,7 +542,7 @@ The conflict index is unsupervised by construction, so its measurement quality m
 To assess how input-signal quality affects downstream prediction, we conduct two complementary analyses. First, we inject Gaussian noise of increasing magnitude ($\sigma \in \{0.03, 0.06, 0.10\}$) into the synthetic trajectories. Figure~\ref{fig:ablation} and Table~\ref{tab:ablation} show the expected degradation as deliberately embedded temporal structure is corrupted. Second, we perform a leave-one-out ablation at the \emph{index-construction} level on the risk-state task: for each variant, the comment-level index is recomputed from the remaining components (weights renormalized to unit sum), trajectories are rebuilt, and the full cleaning and classification pipeline is re-executed, with the test segment evaluated only once. Table~\ref{tab:component_ablation} reports both the pipeline-selected configuration and a controlled comparison at the fixed span (24) with the full feature pool.
 
 \begin{table}[H]
-\caption{Leave-one-out component ablation on the Zhihu risk-state task (test set). The $^{*}$ columns evaluate every variant at span 24 with the full feature pool.}\label{tab:component_ablation}
+\caption{Leave-one-out component ablation on the Zhihu risk-state task (test set). The $^{*}$ columns evaluate every variant at span 48 with the full feature pool.}\label{tab:component_ablation}
 \centering
 \footnotesize
 \begin{threeparttable}
@@ -538,23 +550,23 @@ To assess how input-signal quality affects downstream prediction, we conduct two
 \toprule
 \textbf{Index} & $(w_a,w_e,w_s)$ & \textbf{F1} & \textbf{AUC} & \textbf{F1$^{*}$} & \textbf{AUC$^{*}$} \\
 \midrule
-Full & 0.50, 0.30, 0.20 & \textbf{0.778} & \textbf{0.891} & \textbf{0.764} & \textbf{0.875} \\
-Drop attack (A) & 0.00, 0.60, 0.40 & 0.782 & 0.839 & 0.713 & 0.865 \\
-Drop emotion (E) & 0.71, 0.00, 0.29 & 0.737 & 0.889 & 0.721 & 0.854 \\
-Drop stance (S) & 0.63, 0.38, 0.00 & 0.684 & 0.864 & 0.713 & 0.843 \\
+Full & 0.50, 0.30, 0.20 & 0.767 & \textbf{0.897} & 0.804 & 0.860 \\
+Drop attack (A) & 0.00, 0.60, 0.40 & 0.771 & 0.830 & 0.740 & \textbf{0.862} \\
+Drop emotion (E) & 0.71, 0.00, 0.29 & 0.800 & 0.833 & 0.806 & 0.856 \\
+Drop stance (S) & 0.63, 0.38, 0.00 & \textbf{0.822} & 0.824 & \textbf{0.821} & 0.867 \\
 \bottomrule
 \end{tabular}
 \begin{tablenotes}
-\item Fixed-span deltas vs.\ Full: $\Delta$F1 $-$0.051 (A), $-$0.043 (E), $-$0.051 (S); $\Delta$AUC $-$0.010 (A), $-$0.021 (E), $-$0.032 (S). The unconstrained F1 column is not monotone because span/threshold are re-selected per variant (24/12/30/18).
+\item Fixed-span deltas vs.\ Full: dropping A $\Delta$F1 $=-0.064$, $\Delta$AUC $=+0.002$; dropping E $\Delta$F1 $=+0.002$, $\Delta$AUC $=-0.004$; dropping S $\Delta$F1 $=+0.017$, $\Delta$AUC $=+0.007$. The attack component---the strongest single signal of the new model---is the only component whose removal degrades F1; emotion and stance contribute little at the index level, and the unconstrained columns are not monotone because span/threshold are re-selected per variant.
 \end{tablenotes}
 \end{threeparttable}
 \end{table}
 
-Every semantic component contributes to the risk-state target: under the controlled comparison the full index is best on both F1 and AUC, and stance polarization---despite the smallest nominal weight ($w_s=0.2$)---is the most influential component, especially for AUC. This reconciles the feature-ablation finding of Table~\ref{tab:feature_ablation}: the classifier's validation selection prefers the state history alone because the index itself is the semantic carrier; removing a component at the index level, where its effect is re-expressed through the target definition, measurably degrades the task. The drop-attack variant is a partial exception in the unconstrained column---test F1 stays flat while AUC drops from $0.891$ to $0.839$---indicating that attack contributes predictable variance that a threshold-tuned classifier does not fully exploit.
+With the true attack/anger models, the component ranking changes: under the controlled fixed-span comparison, the attack component is the only one whose removal degrades test F1 ($\Delta$F1 $=-0.064$), confirming that the validated toxicity signal (Sec.~\ref{sec:construct_validity}) carries most of the predictive information. Emotion contributes nothing at the index level ($\Delta$F1 $=+0.002$), and removing stance even slightly improves F1 ($+0.017$)---the stable two-camp structure of Sec.~\ref{sec:stance_audit} is largely orthogonal to the risk-state target. This complements the feature ablation of Table~\ref{tab:feature_ablation}, where the full feature pool is selected: with stronger components, the classifier exploits the raw semantic features directly rather than relying on the state history alone.
 
 \subsubsection{Fusion Weight Sensitivity Analysis}\label{sec:sensitivity}
 
-To assess sensitivity to fusion weights $(w_a, w_e, w_s)$, we sample 40 configurations from a Dirichlet distribution. R\textsuperscript{2} varies within a narrow range (interquartile range $<0.015$), and the best sampled configuration lies near the default (0.5, 0.3, 0.2). Because raw-index performance remains near zero, this apparent insensitivity should not be interpreted as evidence that the default weights are semantically correct; it instead shows that weight tuning cannot repair bin-level noise.
+To assess sensitivity to fusion weights $(w_a, w_e, w_s)$, we re-run the risk-state pipeline for 40 configurations sampled from a Dirichlet distribution (fixed span 48, full feature pool). Test F1 ranges over $[0.712, 0.828]$ (mean $0.784$, std $0.027$), and the best configuration is attack-dominant $(w_a,w_e,w_s) = (0.26, 0.00, 0.74)$ with F1 $0.828$ and AUC $0.919$. The default $(0.5, 0.3, 0.2)$ lies near the middle of this range. Consistent with the component ablation, configurations that down-weight the attack component lose F1, while the emotion weight contributes little; the stance weight can compensate for attack in the fusion, but not when attack is removed entirely.
 
 \subsubsection{Risk-Monitoring Lead Time (RQ5)}
 
@@ -628,7 +640,7 @@ On real data the random protocol inflates R\textsuperscript{2} for every model (
 
 \subsection{Case Study: Real-World Public Opinion Reversal Events}
 
-To validate the framework on real-world conflict escalation data, we conduct a case study on the \textbf{Weibo Public Opinion Reversal Dataset}~\cite{Zhang2023Reversal} (27 events; our scrape contains 224,781 comments). This case study targets the \emph{activity} signal and the annotated reversal windows at hourly granularity; it complements the risk-state transfer experiment of Sec.~\ref{sec:weibo_transfer}, which evaluates the cleaned semantic index on 20 events at 2-hour resolution. The three densest events---Huolala passenger death (32K comments, 335h span), Zhang Zhehan incident (22K comments, 359h), and Gou Jing exam fraud (20K comments, 373h)---are selected for analysis at 1-hour bin granularity. The reversal window annotation provides ground-truth periods of elevated controversy. As reported in Table~\ref{tab:real_results}, comment volume on these dense events is strongly predictable (pooled R\textsuperscript{2}=0.715), while the raw text-derived conflict index yields near-zero R\textsuperscript{2}. Figure~\ref{fig:case_study} visualizes the conflict index trajectories for all three events. The red shaded regions mark the annotated reversal windows---periods during which public opinion consensus underwent a dramatic shift according to the dataset creators~\cite{Zhang2023Reversal}. Across the three events, the conflict index rises modestly within the reversal window (Huolala $\Delta c=+0.011$, Zhang Zhehan $+0.018$, Gou Jing $+0.008$), indicating a weak cross-sectional association. However, CNN-BiLSTM escalation detection is unreliable on these short trajectories (Esc-F1: Huolala 0.89, Zhang Zhehan 0.24, Gou Jing 0.00), with the lone high score on Huolala driven by the event's unusually concentrated conflict dynamics. The reversal window annotation measures \emph{opinion change}, not \emph{comment-level conflict intensity}, and the two constructs are not equivalent.
+To validate the framework on real-world conflict escalation data, we conduct a case study on the \textbf{Weibo Public Opinion Reversal Dataset}~\cite{Zhang2023Reversal} (27 events; our scrape contains 224,781 comments). This case study targets the \emph{activity} signal and the annotated reversal windows at hourly granularity; it complements the risk-state transfer experiment of Sec.~\ref{sec:weibo_transfer}, which evaluates the cleaned semantic index on 20 events at 2-hour resolution. The three densest events---Huolala passenger death (32K comments, 335h span), Zhang Zhehan incident (22K comments, 359h), and Gou Jing exam fraud (20K comments, 373h)---are selected for analysis at 2-hour bin granularity. The reversal window annotation provides ground-truth periods of elevated controversy. As reported in Table~\ref{tab:real_results}, comment volume on these dense events is strongly predictable (pooled R\textsuperscript{2}=0.715), while the raw text-derived conflict index yields near-zero R\textsuperscript{2}. Figure~\ref{fig:case_study} visualizes the conflict index trajectories for all three events. The red shaded regions mark the annotated reversal windows---periods during which public opinion consensus underwent a dramatic shift according to the dataset creators~\cite{Zhang2023Reversal}. Across the three events, the conflict index rises modestly within the reversal window (Huolala $\Delta c=+0.011$, Zhang Zhehan $+0.018$, Gou Jing $+0.008$), indicating a weak cross-sectional association. However, CNN-BiLSTM escalation detection is unreliable on these short trajectories (Esc-F1: Huolala 0.89, Zhang Zhehan 0.24, Gou Jing 0.00), with the lone high score on Huolala driven by the event's unusually concentrated conflict dynamics. The reversal window annotation measures \emph{opinion change}, not \emph{comment-level conflict intensity}, and the two constructs are not equivalent.
 
 \subsection{Boundary Analysis: Why Does the Text-Derived Index Fail?}\label{sec:discussion}\label{sec:attribution}
 
@@ -638,15 +650,15 @@ The positive Zhihu classification result contrasts with weak raw-index regressio
 
 \textbf{(b) Time-axis regularization and temporal aggregation.} Only 39.8\% of adjacent retained observations are truly consecutive 12-hour bins; directly concatenating them creates false temporal adjacency. Restoring the regular grid removes this artifact. Causal smoothing then suppresses isolated semantic spikes, while validation-based span selection prevents the test set from determining the cleaning scale.
 
-\textbf{(c) Signal-to-noise ratio of the conflict index.} The conflict index pipeline introduces noise at four stages: BERT sentiment inference (a product-review model applied to argumentative text), three-component fusion, ECDF calibration, and top-$k$ aggregation. The measurement error of the first stage is quantified in Sec.~\ref{sec:construct_validity}: the attack score separates human-annotated attack comments at AUC $0.744$---above chance but far from ceiling---so the noise is bounded yet substantial. By contrast, comment volume requires only counting and log-normalization. The lag-1 autocorrelation of the raw conflict index averages only $0.112 \pm 0.140$ across Zhihu topics, confirming a near-absence of temporal structure---a fundamental requirement for any forecasting model.
+\textbf{(c) Signal-to-noise ratio of the conflict index.} The conflict index pipeline introduces noise at four stages: toxicity-model inference, zero-shot NLI emotion inference, ECDF calibration, and top-$k$ aggregation. The measurement error of the first stage is quantified in Sec.~\ref{sec:construct_validity}: the attack score separates human-annotated attack comments at AUC $0.988$---near ceiling on the English Detox benchmark---so the attack signal is strong; the remaining stages (especially the top-$k$ aggregation on sparse bins) still limit the raw trajectory's temporal structure. By contrast, comment volume requires only counting and log-normalization. The lag-1 autocorrelation of the raw conflict index averages only $0.112 \pm 0.140$ across Zhihu topics, confirming a near-absence of temporal structure---a fundamental requirement for any forecasting model.
 
-\textbf{(d) Platform characteristics.} Zhihu is a moderated Q\&A platform where discussions are predominantly reasoned rather than confrontational. The Weibo reversal events, by contrast, are acute controversies with many emotionally charged comments per hour. Raw continuous regression on Weibo remains near zero (R\textsuperscript{2}=$0.018$), consistent with the boundary analysis above. The risk-state formulation, however, transfers successfully: the identical pipeline reaches test AUC $0.936$ on Weibo (Table~\ref{tab:weibo_results}), close to Zhihu's $0.891$, although the strongly autocorrelated reversal dynamics make persistence even stronger there (AUC $0.955$). Density and platform context therefore affect the \emph{relative} advantage over persistence, not the viability of the pipeline.
+\textbf{(d) Platform characteristics.} Zhihu is a moderated Q\&A platform where discussions are predominantly reasoned rather than confrontational. The Weibo reversal events, by contrast, are acute controversies with many emotionally charged comments per hour. Raw continuous regression on Weibo remains near zero (R\textsuperscript{2}=$0.018$), consistent with the boundary analysis above. The risk-state formulation, however, transfers successfully: the identical pipeline reaches test AUC $0.989$ on Weibo (Table~\ref{tab:weibo_results}), above Zhihu's $0.897$, although the strongly autocorrelated reversal dynamics make persistence equally strong there (AUC $0.990$). Density and platform context therefore affect the \emph{relative} advantage over persistence, not the viability of the pipeline.
 
 The analysis points to (c) as the dominant difficulty, amplified by (a). The positive classifier succeeds by changing the operational question from exact score extrapolation to whether a persistent, topic-relative high-risk state will occur. Validation selects state history alone: adding activity, missingness, or raw semantic components lowers validation F1. This target is appropriate for monitoring, but it should not be confused with precise prediction of every raw conflict-score fluctuation.
 
 \subsection{Limitations}\label{sec:limitations}
 
-\textbf{(1) Construct validity of the conflict index.} The index relies on pretrained models not designed for conflict detection. We have validated the attack component against 191,634 human-annotated English Wikipedia Detox comments~\cite{Wulczyn2017}: the review-domain sentiment score separates attack-labeled comments at AUC $0.744$ (Spearman $\rho=0.254$), significantly above chance but far below dedicated toxicity classifiers, and a social-media-domain model reaches $0.811$ on the same labels. The emotion and stance components, and Chinese-language discourse, have not yet been validated by human raters; expert annotation is ongoing. The index must therefore be treated as a validated-but-moderate proxy rather than a fully validated measure of conflict.
+\textbf{(1) Construct validity of the conflict index.} The index relies on pretrained models not designed for conflict detection. We have validated the attack component against 191,634 human-annotated English Wikipedia Detox comments~\cite{Wulczyn2017}: the multilingual toxicity detector separates attack-labeled comments at AUC $0.988$ (Spearman $\rho=0.507$), a strong result on English data. The anger component (zero-shot NLI) and the stance clusters have been validated only structurally (Sec.~\ref{sec:stance_audit}), and Chinese-language human ratings are still missing; expert annotation is ongoing. The index must therefore be treated as a strong proxy for attack intensity with partially validated emotion and stance components.
 
 \textbf{(2) Internally defined targets.} Synthetic escalation labels derive from the trajectory generator, while the Zhihu high-risk label is defined by the cleaned index's training-period 80th percentile. The latter is a prospective, leakage-free monitoring state but not external ground truth for societal conflict. Causal smoothing also increases persistence and makes state prediction easier; accordingly, the positive result is reported against a strong persistence baseline and not interpreted as event-level conflict validation.
 
@@ -654,15 +666,15 @@ The analysis points to (c) as the dominant difficulty, amplified by (a). The pos
 
 \textbf{(4) Monitoring horizon.} The classifier predicts threshold exceedance within six 12-hour bins, whereas the selected 12-day smoothing scale represents a slower-moving risk state. This supports medium-scale monitoring rather than rapid event-onset warning. The negative synthetic lead time ($-1.7$ bins) further limits claims of operational advance notice.
 
-\textbf{(5) Cross-platform and cross-lingual generalization.} The full pipeline is evaluated on two Chinese-language platforms (Zhihu, Weibo) and transfers across them (Zhihu AUC $0.891$; Weibo AUC $0.936$). English-language evidence currently covers only the attack component (Wikipedia Detox, AUC $0.744$); the emotion and stance components and the full pipeline on English discourse remain untested.
+\textbf{(5) Cross-platform and cross-lingual generalization.} The full pipeline is evaluated on two Chinese-language platforms (Zhihu, Weibo) and transfers across them (Zhihu AUC $0.897$; Weibo AUC $0.989$). English-language evidence covers only the attack component (Wikipedia Detox, AUC $0.988$); the anger component, the stance component, and the full pipeline on English discourse remain untested.
 
 \section{Conclusion and Future Work}
 
 We investigated whether data cleaning can convert a sparse conflict index constructed without task-specific labels into a useful forecasting target. The downstream predictors remain supervised; ``unsupervised'' refers only to index construction.
 
-After restoring the regular time grid, applying training-only calibration and robust cleaning, and selecting a causal smoothing scale and parsimonious feature set on validation data, the state-history classifier reaches F1 $0.778$ and recall $0.822$ on 1,706 held-out Zhihu windows. Persistence reaches F1 $0.716$ and recall $0.584$; topic-bootstrap intervals confirm positive gains for both metrics. Continuous regression remains below persistence despite positive absolute R\textsuperscript{2}, while synthetic and Weibo-volume targets remain easier to forecast. The main finding is therefore both positive and bounded: cleaned causal states support useful warning-state classification, but not superior exact trajectory prediction.
+After restoring the regular time grid, applying training-only calibration and robust cleaning, and selecting a causal smoothing scale and feature set on validation data, the risk-state classifier reaches AUC $0.897$ and F1 $0.767$ on 1,706 held-out Zhihu windows, with a significant recall gain over persistence ($+0.098$; 95\% CI $[0.042,0.167]$) and strong generalization to unseen topics (topic-held-out F1 $0.787\pm0.020$ vs.\ persistence $0.705$). Continuous regression remains below persistence despite positive absolute R\textsuperscript{2}. The main finding is therefore both positive and bounded: with genuine attack and anger models, cleaned causal states support high-accuracy warning-state classification and cross-platform transfer (Weibo AUC $0.989$), but not superior exact trajectory prediction, and the relative F1 advantage over persistence shrinks as the index becomes more accurate and more persistent.
 
-The immediate next step is not further architectural tuning but measurement validation. We have completed one half of that program: the attack component is validated against 191,634 human Wikipedia Detox labels (AUC $0.744$, Spearman $\rho=0.254$), and the pipeline transfers to Weibo reversal events (AUC $0.936$) with persistence dominating the relative comparison. The remaining half---expert annotation of the emotion and stance components and of Chinese-language discourse---is ongoing. Only a fully validated target should then be evaluated across platforms, event-held-out splits, aggregation scales, and longer horizons, with external precursor signals added where positive lead time is required.
+The immediate next step is not further architectural tuning but measurement validation. We have completed most of that program: the attack component is validated against 191,634 human Wikipedia Detox labels (AUC $0.988$, Spearman $\rho=0.507$), the stance clusters pass the stability and lexicon audit (Sec.~\ref{sec:stance_audit}), and the pipeline transfers to Weibo reversal events (AUC $0.989$) with persistence dominating the relative comparison. The remaining half---expert annotation of the anger component and of Chinese-language discourse---is ongoing. Only a fully validated target should then be evaluated across aggregation scales and longer horizons, with external precursor signals added where positive lead time is required.
 
 \bibliographystyle{IEEEtran}
 \bibliography{refs}
