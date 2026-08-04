@@ -1,0 +1,35 @@
+{
+  "device": "cuda",
+  "n_comments": 191634,
+  "source": "wiki_toxic (Wikipedia Detox)",
+  "nlptown/bert-base-multilingual-uncased-sentiment": {
+    "attack_mean": 0.4388008117675781,
+    "attack_std": 0.245266854763031,
+    "toxic": {
+      "n": 191634,
+      "positive_rate": 0.10007096861725999,
+      "spearman_rho": 0.2536461207818959,
+      "spearman_p": 0.0,
+      "pearson_r": 0.27053711496961863,
+      "pearson_p": 0.0,
+      "auc": 0.7439941527969669,
+      "attack_mean_label1": 0.6377837657928467,
+      "attack_mean_label0": 0.4166741967201233
+    }
+  },
+  "cardiffnlp/twitter-xlm-roberta-base-sentiment": {
+    "attack_mean": 0.6594264507293701,
+    "attack_std": 0.22444233298301697,
+    "toxic": {
+      "n": 191634,
+      "positive_rate": 0.10007096861725999,
+      "spearman_rho": 0.32376913741389973,
+      "spearman_p": 0.0,
+      "pearson_r": 0.2869402441749482,
+      "pearson_p": 0.0,
+      "auc": 0.8114487859762116,
+      "attack_mean_label1": 0.852554976940155,
+      "attack_mean_label0": 0.6379508972167969
+    }
+  }
+}

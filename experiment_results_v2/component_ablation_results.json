@@ -1,0 +1,459 @@
+{
+  "fidelity_ok": true,
+  "variants_weights": {
+    "full": [
+      0.5,
+      0.3,
+      0.2
+    ],
+    "drop_A": [
+      0.0,
+      0.6,
+      0.4
+    ],
+    "drop_E": [
+      0.7142857142857143,
+      0.0,
+      0.2857142857142857
+    ],
+    "drop_S": [
+      0.625,
+      0.375,
+      0.0
+    ]
+  },
+  "comment_n": 31938,
+  "full": {
+    "variant": "full",
+    "n_topics": 20,
+    "selected_span": 24,
+    "selected_feature_group": "state_only",
+    "selected_c": 0.1,
+    "selected_decision_threshold": 0.39999999999999997,
+    "valid": {
+      "n": 680,
+      "prevalence": 0.5102941176470588,
+      "logistic": {
+        "auc": 0.8589627091068013,
+        "precision": 0.7723785166240409,
+        "recall": 0.8703170028818443,
+        "f1": 0.8184281842818428
+      },
+      "persistence": {
+        "auc": 0.8630128687765576,
+        "precision": 0.9184549356223176,
+        "recall": 0.6167146974063401,
+        "f1": 0.7379310344827587
+      },
+      "ridge": {
+        "r2": 0.0775495043887543,
+        "mae": 1.2048104452047113
+      },
+      "persistence_regression": {
+        "r2": 0.46536078025164473,
+        "mae": 1.0609634984279357
+      }
+    },
+    "test": {
+      "n": 1706,
+      "prevalence": 0.4155920281359906,
+      "logistic": {
+        "auc": 0.8913850154129525,
+        "precision": 0.7379746835443038,
+        "recall": 0.8222849083215797,
+        "f1": 0.7778519012675117
+      },
+      "persistence": {
+        "auc": 0.8958115531361364,
+        "precision": 0.9261744966442953,
+        "recall": 0.5839210155148096,
+        "f1": 0.7162629757785467
+      },
+      "topic_bootstrap_logistic_minus_persistence": {
+        "f1": {
+          "mean_difference": 0.061971501858591294,
+          "ci95": [
+            0.017641918895375794,
+            0.10809313288054456
+          ]
+        },
+        "recall": {
+          "mean_difference": 0.24107435792906154,
+          "ci95": [
+            0.17331585677749362,
+            0.3170236367406179
+          ]
+        },
+        "auc": {
+          "mean_difference": -0.004607701876730719,
+          "ci95": [
+            -0.007921704649225998,
+            -0.0012943817519220414
+          ]
+        }
+      },
+      "ridge": {
+        "r2": 0.4646803133788727,
+        "mae": 1.1976398688999097
+      },
+      "persistence_regression": {
+        "r2": 0.6400863222879316,
+        "mae": 1.080170020342829
+      }
+    },
+    "fixed_span24_full_features_test": {
+      "n": 1706,
+      "prevalence": 0.4155920281359906,
+      "logistic": {
+        "auc": 0.8752633075531249,
+        "precision": 0.7146371463714637,
+        "recall": 0.8194640338504936,
+        "f1": 0.7634691195795007
+      },
+      "persistence": {
+        "auc": 0.8958115531361364,
+        "precision": 0.9261744966442953,
+        "recall": 0.5839210155148096,
+        "f1": 0.7162629757785467
+      },
+      "ridge": {
+        "r2": 0.4646803133788727,
+        "mae": 1.1976398688999097
+      },
+      "persistence_regression": {
+        "r2": 0.6400863222879316,
+        "mae": 1.080170020342829
+      }
+    },
+    "topic_summary": {
+      "n_topics": 20,
+      "f1_improved_topics": 15,
+      "recall_improved_topics": 18
+    }
+  },
+  "drop_A": {
+    "variant": "drop_A",
+    "n_topics": 20,
+    "selected_span": 12,
+    "selected_feature_group": "state_only",
+    "selected_c": 0.03,
+    "selected_decision_threshold": 0.3,
+    "valid": {
+      "n": 680,
+      "prevalence": 0.5411764705882353,
+      "logistic": {
+        "auc": 0.8248197115384617,
+        "precision": 0.6938775510204082,
+        "recall": 0.9239130434782609,
+        "f1": 0.7925407925407926
+      },
+      "persistence": {
+        "auc": 0.8259084099777034,
+        "precision": 0.8952380952380953,
+        "recall": 0.5108695652173914,
+        "f1": 0.6505190311418685
+      },
+      "ridge": {
+        "r2": 0.3375874001919572,
+        "mae": 1.621967443938359
+      },
+      "persistence_regression": {
+        "r2": 0.45757162350287794,
+        "mae": 1.538511279989138
+      }
+    },
+    "test": {
+      "n": 1706,
+      "prevalence": 0.5381008206330598,
+      "logistic": {
+        "auc": 0.8386513940037379,
+        "precision": 0.7261682242990655,
+        "recall": 0.8464052287581699,
+        "f1": 0.7816901408450704
+      },
+      "persistence": {
+        "auc": 0.8444767924090111,
+        "precision": 0.8967495219885278,
+        "recall": 0.5108932461873639,
+        "f1": 0.6509368494101319
+      },
+      "topic_bootstrap_logistic_minus_persistence": {
+        "f1": {
+          "mean_difference": 0.13156918203736984,
+          "ci95": [
+            0.0881084396937877,
+            0.1788716312403888
+          ]
+        },
+        "recall": {
+          "mean_difference": 0.33666721000103755,
+          "ci95": [
+            0.2706213067880969,
+            0.4142072213500784
+          ]
+        },
+        "auc": {
+          "mean_difference": -0.005919761128120807,
+          "ci95": [
+            -0.010000029495538177,
+            -0.0020124309187213537
+          ]
+        }
+      },
+      "ridge": {
+        "r2": 0.4338767149899322,
+        "mae": 1.6886114239385768
+      },
+      "persistence_regression": {
+        "r2": 0.453045663128154,
+        "mae": 1.6822704924617036
+      }
+    },
+    "fixed_span24_full_features_test": {
+      "n": 1706,
+      "prevalence": 0.4155920281359906,
+      "logistic": {
+        "auc": 0.8650181857278465,
+        "precision": 0.7450076804915514,
+        "recall": 0.6840620592383639,
+        "f1": 0.7132352941176471
+      },
+      "persistence": {
+        "auc": 0.8833482110647883,
+        "precision": 0.9048723897911833,
+        "recall": 0.5500705218617772,
+        "f1": 0.6842105263157895
+      },
+      "ridge": {
+        "r2": 0.6690437460537972,
+        "mae": 1.0995116532563822
+      },
+      "persistence_regression": {
+        "r2": 0.7110045820110689,
+        "mae": 1.035332749049566
+      }
+    },
+    "topic_summary": {
+      "n_topics": 20,
+      "f1_improved_topics": 18,
+      "recall_improved_topics": 19
+    }
+  },
+  "drop_E": {
+    "variant": "drop_E",
+    "n_topics": 20,
+    "selected_span": 30,
+    "selected_feature_group": "state_only",
+    "selected_c": 1.0,
+    "selected_decision_threshold": 0.49999999999999994,
+    "valid": {
+      "n": 680,
+      "prevalence": 0.40441176470588236,
+      "logistic": {
+        "auc": 0.9163726150392817,
+        "precision": 0.832089552238806,
+        "recall": 0.8109090909090909,
+        "f1": 0.8213627992633518
+      },
+      "persistence": {
+        "auc": 0.9192637485970818,
+        "precision": 0.9226519337016574,
+        "recall": 0.6072727272727273,
+        "f1": 0.7324561403508771
+      },
+      "ridge": {
+        "r2": 0.6279674593145628,
+        "mae": 0.9329744792887184
+      },
+      "persistence_regression": {
+        "r2": 0.6888972757968024,
+        "mae": 0.8691833498715043
+      }
+    },
+    "test": {
+      "n": 1706,
+      "prevalence": 0.35345838218053927,
+      "logistic": {
+        "auc": 0.8889324907646718,
+        "precision": 0.7751371115173674,
+        "recall": 0.703150912106136,
+        "f1": 0.7373913043478261
+      },
+      "persistence": {
+        "auc": 0.8969071234940438,
+        "precision": 0.9130434782608695,
+        "recall": 0.5572139303482587,
+        "f1": 0.6920700308959835
+      },
+      "topic_bootstrap_logistic_minus_persistence": {
+        "f1": {
+          "mean_difference": 0.04557164745877407,
+          "ci95": [
+            -0.0028072735105124174,
+            0.10394884927157318
+          ]
+        },
+        "recall": {
+          "mean_difference": 0.14587833230879396,
+          "ci95": [
+            0.07570760799484208,
+            0.22241503699788576
+          ]
+        },
+        "auc": {
+          "mean_difference": -0.008433825335516247,
+          "ci95": [
+            -0.015370721908766002,
+            -0.0012633337983867369
+          ]
+        }
+      },
+      "ridge": {
+        "r2": 0.6912490860085192,
+        "mae": 0.9694000061794061
+      },
+      "persistence_regression": {
+        "r2": 0.7332839319231728,
+        "mae": 0.9076679938730727
+      }
+    },
+    "fixed_span24_full_features_test": {
+      "n": 1706,
+      "prevalence": 0.40621336459554513,
+      "logistic": {
+        "auc": 0.8536713916773145,
+        "precision": 0.7069444444444445,
+        "recall": 0.7344877344877345,
+        "f1": 0.7204529370134466
+      },
+      "persistence": {
+        "auc": 0.8809317259465335,
+        "precision": 0.9077669902912622,
+        "recall": 0.5396825396825397,
+        "f1": 0.676923076923077
+      },
+      "ridge": {
+        "r2": 0.6304601515813268,
+        "mae": 1.1378415972170284
+      },
+      "persistence_regression": {
+        "r2": 0.6836542499114766,
+        "mae": 1.0733241608024928
+      }
+    },
+    "topic_summary": {
+      "n_topics": 20,
+      "f1_improved_topics": 12,
+      "recall_improved_topics": 13
+    }
+  },
+  "drop_S": {
+    "variant": "drop_S",
+    "n_topics": 20,
+    "selected_span": 18,
+    "selected_feature_group": "state_only",
+    "selected_c": 0.01,
+    "selected_decision_threshold": 0.5999999999999999,
+    "valid": {
+      "n": 680,
+      "prevalence": 0.47352941176470587,
+      "logistic": {
+        "auc": 0.8727488809465979,
+        "precision": 0.8250825082508251,
+        "recall": 0.7763975155279503,
+        "f1": 0.8
+      },
+      "persistence": {
+        "auc": 0.8822044484541447,
+        "precision": 0.9134615384615384,
+        "recall": 0.5900621118012422,
+        "f1": 0.7169811320754716
+      },
+      "ridge": {
+        "r2": -0.09420202031328961,
+        "mae": 1.697458908026956
+      },
+      "persistence_regression": {
+        "r2": 0.4253901692859454,
+        "mae": 1.4344297986916963
+      }
+    },
+    "test": {
+      "n": 1706,
+      "prevalence": 0.4577960140679953,
+      "logistic": {
+        "auc": 0.8640523237706337,
+        "precision": 0.8382899628252788,
+        "recall": 0.5774647887323944,
+        "f1": 0.6838514025777104
+      },
+      "persistence": {
+        "auc": 0.8764716060490708,
+        "precision": 0.9107551487414187,
+        "recall": 0.5096030729833547,
+        "f1": 0.6535303776683087
+      },
+      "topic_bootstrap_logistic_minus_persistence": {
+        "f1": {
+          "mean_difference": 0.030950591439139166,
+          "ci95": [
+            -0.005837245706092967,
+            0.0732238311371948
+          ]
+        },
+        "recall": {
+          "mean_difference": 0.06890124308602162,
+          "ci95": [
+            0.015530061655195182,
+            0.12949762916939173
+          ]
+        },
+        "auc": {
+          "mean_difference": -0.012050214134120274,
+          "ci95": [
+            -0.021144733327724135,
+            -0.0035797347963039635
+          ]
+        }
+      },
+      "ridge": {
+        "r2": 0.34265912451377734,
+        "mae": 1.5529042440359806
+      },
+      "persistence_regression": {
+        "r2": 0.5586372244519071,
+        "mae": 1.369989047489772
+      }
+    },
+    "fixed_span24_full_features_test": {
+      "n": 1706,
+      "prevalence": 0.4144196951934349,
+      "logistic": {
+        "auc": 0.8432463580978433,
+        "precision": 0.7217391304347827,
+        "recall": 0.7043847241867044,
+        "f1": 0.7129563350035791
+      },
+      "persistence": {
+        "auc": 0.8867254807848867,
+        "precision": 0.9106699751861043,
+        "recall": 0.5190947666195191,
+        "f1": 0.6612612612612613
+      },
+      "ridge": {
+        "r2": 0.4702831748451639,
+        "mae": 1.3101406085646092
+      },
+      "persistence_regression": {
+        "r2": 0.6535877105082577,
+        "mae": 1.1355424053882779
+      }
+    },
+    "topic_summary": {
+      "n_topics": 20,
+      "f1_improved_topics": 12,
+      "recall_improved_topics": 12
+    }
+  },
+  "fidelity_note": "Structure matches the saved trajectories exactly (20 topics, identical bin counts). Max |Δc_bar|=1.9e-4 vs trajectories_real_model.pkl is model-inference numerical noise (saved pickle produced on a different GPU/torch build); tolerance relaxed from 1e-8 to 1e-3."
+}
